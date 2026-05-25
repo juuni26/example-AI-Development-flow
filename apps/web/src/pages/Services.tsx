@@ -12,6 +12,7 @@ import {
 import { formatDuration, type SortableColumn } from "@cleandrop/shared";
 import { AppShell } from "@/components/AppShell";
 import { StatusBadge } from "@/components/StatusBadge";
+import { SummaryCards } from "@/components/SummaryCards";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +37,7 @@ import { cn } from "@/lib/utils";
 import { useCatalogParams } from "@/lib/use-catalog-params";
 import { useDebounce } from "@/lib/use-debounce";
 import { useServicesQuery } from "@/lib/use-services-query";
+import { useSummaryQuery } from "@/lib/use-summary-query";
 
 const PAGE_SIZE_OPTIONS = [6, 10, 25];
 
@@ -70,6 +72,7 @@ export function ServicesPage(): JSX.Element {
   // The query uses the URL-bound query directly so the debounced search has
   // already been written to the URL before the request fires.
   const { data, isLoading, isError, error, isFetching, refetch } = useServicesQuery(query);
+  const summary = useSummaryQuery();
 
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -91,18 +94,9 @@ export function ServicesPage(): JSX.Element {
         </div>
       </header>
 
-      {/* Summary cards land in #5. The four-slot grid is reserved here so the
-          layout does not jump when they arrive. */}
-      <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="h-[108px]">
-            <CardContent className="flex h-full items-center justify-center p-0 text-xs text-muted-foreground">
-              {/* Placeholder; summary endpoint lands in slice #5. */}
-              &nbsp;
-            </CardContent>
-          </Card>
-        ))}
-      </section>
+      <div className="mb-6">
+        <SummaryCards data={summary.data} isLoading={summary.isLoading} />
+      </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">

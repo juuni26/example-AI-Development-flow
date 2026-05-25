@@ -50,6 +50,14 @@ export const listServicesQuerySchema = z.object({
 });
 export type ListServicesQuery = z.infer<typeof listServicesQuerySchema>;
 
+export const servicesSummarySchema = z.object({
+  total: z.number().int().nonnegative(),
+  active: z.number().int().nonnegative(),
+  drafts: z.number().int().nonnegative(),
+  avgBasePriceCents: z.number().int().nonnegative().nullable(),
+});
+export type ServicesSummary = z.infer<typeof servicesSummarySchema>;
+
 export const paginatedServicesSchema = z.object({
   data: z.array(serviceSchema),
   total: z.number().int().nonnegative(),
