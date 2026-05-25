@@ -39,6 +39,29 @@ export type SortableColumn = z.infer<typeof sortableColumnSchema>;
 export const sortDirSchema = z.enum(["asc", "desc"]);
 export type SortDir = z.infer<typeof sortDirSchema>;
 
+// Write DTOs ----------------------------------------------------------------
+// Reasonable upper bounds so a typo on the client doesn't accept multi-MB
+// payloads; matched to the schema column widths where applicable.
+export const createServiceSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(200),
+  description: z.string().trim().min(1, "Description is required").max(2000),
+  category: categorySchema,
+  companyId: z.string().uuid(),
+  status: statusSchema,
+  durationMinutes: z.coerce.number().int().min(1).max(60 * 24),
+  basePriceCents: z.coerce.number().int().min(0).max(100_000_000),
+});
+export type CreateServiceRequest = z.infer<typeof createServiceSchema>;
+
+// PATCH: every field is optional. At least one field must be present so the
+// caller can't accidentally PATCH with an empty body (silent no-op).
+export const updateServiceSchema = createServiceSchema
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, {
+    message: "At least one field is required",
+  });
+export type UpdateServiceRequest = z.infer<typeof updateServiceSchema>;
+
 export const listServicesQuerySchema = z.object({
   search: z.string().trim().max(200).optional(),
   status: statusSchema.optional(),
