@@ -13,6 +13,7 @@ export function useServicesQuery(query: ListServicesQuery): UseQueryResult<Pagin
       if (query.search) params.search = query.search;
       if (query.status) params.status = query.status;
       if (query.category) params.category = query.category;
+      if (query.companyId) params.companyId = query.companyId;
       if (query.sortBy) params.sortBy = query.sortBy;
       if (query.sortDir) params.sortDir = query.sortDir;
       const res = await api.get<PaginatedServices>("/services", { params });

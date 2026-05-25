@@ -2,9 +2,8 @@ import type { JSX } from "react";
 import type { Status } from "@cleandrop/shared";
 import { Badge } from "@/components/ui/badge";
 
-// Matches the design preview: a rounded pill with a tinted background and
-// foreground tuned for AA contrast. No leading dot — the preview shows a
-// plain text label inside the pill.
+// Matches the design preview: rounded-full pills with three distinct
+// treatments — Active = solid black, Draft = light neutral, Inactive = outline.
 const VARIANT: Record<Status, "active" | "draft" | "inactive"> = {
   Active: "active",
   Draft: "draft",
@@ -13,7 +12,7 @@ const VARIANT: Record<Status, "active" | "draft" | "inactive"> = {
 
 export function StatusBadge({ status }: { status: Status }): JSX.Element {
   return (
-    <Badge variant={VARIANT[status]} className="px-2.5 py-0.5 text-xs font-medium">
+    <Badge variant={VARIANT[status]} className="px-3 py-1 text-xs font-medium">
       {status}
     </Badge>
   );

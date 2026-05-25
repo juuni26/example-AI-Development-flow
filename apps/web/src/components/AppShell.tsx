@@ -2,15 +2,22 @@ import type { JSX, ReactNode } from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  Briefcase,
   ChevronsLeft,
   ChevronsRight,
   LogOut,
   Menu,
-  Settings,
-  Sparkles,
+  UserRound,
   X,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/use-auth";
 import { readAuth } from "@/lib/auth-store";
 import { api } from "@/lib/api";
@@ -26,7 +33,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   {
     label: "Services",
-    icon: <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />,
+    icon: <Briefcase className="h-4 w-4 shrink-0" aria-hidden="true" />,
     active: true,
   },
 ];
@@ -53,13 +60,15 @@ export function AppShell({ children }: { children: ReactNode }): JSX.Element {
     }
   };
 
-  const emailLocal = auth?.user.email.split("@")[0] ?? "";
   const roleLabel = auth?.user.role === "admin" ? "Administrator" : "Read-only";
+  // Display name shown next to the avatar icon in the sidebar footer.
+  // Matches the "Dev Admin" treatment in the design reference.
+  const displayName = auth?.user.role === "admin" ? "Dev Admin" : "Dev User";
 
   return (
-    <div className="flex min-h-screen bg-muted/40">
+    <div className="flex min-h-screen bg-white">
       {/* Mobile top bar — visible below md breakpoint */}
-      <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between border-b bg-background/95 px-4 backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between bg-background/95 px-4 backdrop-blur md:hidden">
         <button
           type="button"
           className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -94,7 +103,7 @@ export function AppShell({ children }: { children: ReactNode }): JSX.Element {
             collapsed={false}
             onToggle={undefined}
             navItems={NAV_ITEMS}
-            email={emailLocal}
+            displayName={displayName}
             roleLabel={roleLabel}
             signingOut={signingOut}
             onSignOut={onSignOut}
@@ -106,7 +115,7 @@ export function AppShell({ children }: { children: ReactNode }): JSX.Element {
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "hidden shrink-0 border-r bg-background transition-[width] duration-200 md:flex md:flex-col",
+          "hidden shrink-0  transition-[width] duration-200 md:flex md:flex-col",
           collapsed ? "w-[68px]" : "w-60",
         )}
         aria-label="Primary navigation"
@@ -115,7 +124,7 @@ export function AppShell({ children }: { children: ReactNode }): JSX.Element {
           collapsed={collapsed}
           onToggle={toggle}
           navItems={NAV_ITEMS}
-          email={emailLocal}
+          displayName={displayName}
           roleLabel={roleLabel}
           signingOut={signingOut}
           onSignOut={onSignOut}
@@ -131,7 +140,7 @@ interface SidebarBodyProps {
   collapsed: boolean;
   onToggle?: () => void;
   navItems: NavItem[];
-  email: string;
+  displayName: string;
   roleLabel: string;
   signingOut: boolean;
   onSignOut: () => void;
@@ -142,7 +151,7 @@ function SidebarBody({
   collapsed,
   onToggle,
   navItems,
-  email,
+  displayName,
   roleLabel,
   signingOut,
   onSignOut,
@@ -152,13 +161,13 @@ function SidebarBody({
     <>
       <div
         className={cn(
-          "flex h-14 items-center border-b px-3",
+          "flex h-14 items-center px-3",
           collapsed ? "justify-center" : "justify-between",
         )}
       >
         {!collapsed ? (
           <>
-            <span className="text-sm font-semibold tracking-tight">platform</span>
+            <span className="text-sm font-semibold tracking-tight pl-8">platform</span>
             <div className="flex items-center gap-1">
               <button
                 type="button"
@@ -166,7 +175,7 @@ function SidebarBody({
                 aria-label="Settings"
                 title="Settings"
               >
-                <Settings className="h-4 w-4" />
+                
               </button>
               {onToggle ? (
                 <button
@@ -228,56 +237,54 @@ function SidebarBody({
         ))}
       </nav>
 
-      <div className={cn("border-t p-3", collapsed && "flex flex-col items-center gap-2 p-2")}>
-        {collapsed ? (
-          <>
-            <div
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground text-[11px] font-semibold uppercase text-background"
-              aria-hidden="true"
+      <div className={cn("p-3", collapsed && "p-2")}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label={`${displayName} — open account menu`}
+              className={cn(
+                "flex w-full items-center rounded-md text-left transition-colors",
+                "hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+                collapsed ? "justify-center p-2" : "gap-3 p-2",
+              )}
             >
-              {email.slice(0, 1) || "·"}
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onSignOut}
-              disabled={signingOut}
-              aria-label="Sign out"
-              title="Sign out"
-              className="h-8 w-8"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </>
-        ) : (
-          <div className="flex items-center gap-2.5">
-            <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-semibold uppercase text-background"
-              aria-hidden="true"
-            >
-              {email.slice(0, 1) || "·"}
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-sm font-medium leading-tight" title={email}>
-                {email || "—"}
-              </span>
-              <span className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">
+              <UserRound
+                className="h-6 w-6 shrink-0 fill-foreground text-foreground"
+                strokeWidth={1.5}
+                aria-hidden="true"
+              />
+              {!collapsed ? (
+                <span className="truncate text-sm font-medium text-foreground">{displayName}</span>
+              ) : null}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            side={collapsed ? "right" : "top"}
+            align={collapsed ? "start" : "end"}
+            className="min-w-[200px]"
+          >
+            <DropdownMenuLabel className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium text-foreground">{displayName}</span>
+              <span className="text-[11px] font-normal uppercase tracking-wide text-muted-foreground">
                 {roleLabel}
               </span>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onSignOut}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={() => {
+                // Defer to next tick so the menu can finish closing before the
+                // navigation away from the page happens.
+                if (!signingOut) void Promise.resolve().then(onSignOut);
+              }}
               disabled={signingOut}
-              aria-label="Sign out"
-              title="Sign out"
-              className="h-8 w-8 shrink-0"
+              className="text-destructive focus:text-destructive data-[highlighted]:text-destructive"
             >
               <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+              {signingOut ? "Signing out…" : "Sign out"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </>
   );

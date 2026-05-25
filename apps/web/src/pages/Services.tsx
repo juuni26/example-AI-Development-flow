@@ -3,18 +3,24 @@ import { useEffect, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
-  ArrowUpDown,
   Building2,
   ChevronLeft,
   ChevronRight,
+  ChevronsUpDown,
   MoreHorizontal,
   Pencil,
   Plus,
   Search,
   Trash2,
 } from "lucide-react";
-import { formatDuration, type Service, type SortableColumn } from "@cleandrop/shared";
+import {
+  categorySchema,
+  statusSchema,
+  type Service,
+  type SortableColumn,
+} from "@cleandrop/shared";
 import { AppShell } from "@/components/AppShell";
+import { ColumnFilter, type ColumnFilterOption } from "@/components/ColumnFilter";
 import { DeleteServiceDialog } from "@/components/DeleteServiceDialog";
 import { ServiceFormSheet } from "@/components/ServiceFormSheet";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -48,11 +54,20 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/use-auth";
 import { useCatalogParams } from "@/lib/use-catalog-params";
+import { useCompaniesQuery } from "@/lib/use-companies-query";
 import { useDebounce } from "@/lib/use-debounce";
 import { useServicesQuery } from "@/lib/use-services-query";
 import { useSummaryQuery } from "@/lib/use-summary-query";
 
 const PAGE_SIZE_OPTIONS = [6, 10, 25];
+
+// Filter options for the column funnels. Status + Category are static enums
+// from the shared schema; Company is hydrated at runtime from /companies.
+const STATUS_OPTIONS: ColumnFilterOption<typeof statusSchema._type>[] = statusSchema.options.map(
+  (s) => ({ value: s, label: s }),
+);
+const CATEGORY_OPTIONS: ColumnFilterOption<typeof categorySchema._type>[] =
+  categorySchema.options.map((c) => ({ value: c, label: c }));
 
 export function ServicesPage(): JSX.Element {
   const {
@@ -60,6 +75,7 @@ export function ServicesPage(): JSX.Element {
     searchInput,
     status,
     category,
+    companyId,
     sortBy,
     sortDir,
     page,
@@ -67,10 +83,16 @@ export function ServicesPage(): JSX.Element {
     setSearch,
     setStatus,
     setCategory,
+    setCompanyId,
     setSort,
     setPage,
     setPageSize,
   } = useCatalogParams();
+
+  // Companies are fetched once for both the company column filter and the
+  // form's company dropdown — useCompaniesQuery is cached at the React Query
+  // layer so adding this here costs nothing extra.
+  const companies = useCompaniesQuery();
 
   // Local input state mirrors the URL `search` param but is debounced before
   // pushing back, so typing does not refire the query on every keystroke.
@@ -125,12 +147,9 @@ export function ServicesPage(): JSX.Element {
       </div>
 
       <Card className="shadow-soft-1">
-        <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border/60 pb-4">
+        <CardHeader className="flex flex-row items-center justify-between gap-4 px-8 ">
           <div className="flex flex-col">
-            <CardTitle className="text-base">Catalog</CardTitle>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {total === 0 ? "No services" : `${total} service${total === 1 ? "" : "s"}`}
-            </p>
+            <CardTitle className="text-lg">Catalog</CardTitle>           
           </div>
           {isAdmin ? (
             <Button size="sm" variant="outline" onClick={openCreate} className="shrink-0">
@@ -141,18 +160,21 @@ export function ServicesPage(): JSX.Element {
         <CardContent className="space-y-4">
           <div className="flex flex-col gap-3">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 placeholder="Search services…"
-                className="pl-9"
+                className="h-11 rounded-lg pl-10 text-sm"
                 aria-label="Search services"
               />
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Select value={status} onValueChange={(v) => setStatus(v as never)}>
-                <SelectTrigger aria-label="Filter by status">
+                <SelectTrigger
+                  aria-label="Filter by status"
+                  className="h-11 rounded-lg px-3.5 text-sm"
+                >
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -163,7 +185,10 @@ export function ServicesPage(): JSX.Element {
                 </SelectContent>
               </Select>
               <Select value={category} onValueChange={(v) => setCategory(v as never)}>
-                <SelectTrigger aria-label="Filter by category">
+                <SelectTrigger
+                  aria-label="Filter by category"
+                  className="h-11 rounded-lg px-3.5 text-sm"
+                >
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
@@ -183,13 +208,52 @@ export function ServicesPage(): JSX.Element {
                   <SortableHead column="name" current={sortBy} dir={sortDir} onSort={setSort}>
                     Name
                   </SortableHead>
-                  <SortableHead column="category" current={sortBy} dir={sortDir} onSort={setSort}>
+                  <SortableHead
+                    column="category"
+                    current={sortBy}
+                    dir={sortDir}
+                    onSort={setSort}
+                    filter={
+                      <ColumnFilter
+                        label="Category"
+                        value={category}
+                        options={CATEGORY_OPTIONS}
+                        onChange={(v) => setCategory(v as never)}
+                      />
+                    }
+                  >
                     Category
                   </SortableHead>
-                  <SortableHead column="company" current={sortBy} dir={sortDir} onSort={setSort}>
+                  <SortableHead
+                    column="company"
+                    current={sortBy}
+                    dir={sortDir}
+                    onSort={setSort}
+                    filter={
+                      <ColumnFilter
+                        label="Company"
+                        value={companyId}
+                        options={(companies.data ?? []).map((c) => ({ value: c.id, label: c.name }))}
+                        onChange={(v) => setCompanyId(v)}
+                      />
+                    }
+                  >
                     Company
                   </SortableHead>
-                  <SortableHead column="status" current={sortBy} dir={sortDir} onSort={setSort}>
+                  <SortableHead
+                    column="status"
+                    current={sortBy}
+                    dir={sortDir}
+                    onSort={setSort}
+                    filter={
+                      <ColumnFilter
+                        label="Status"
+                        value={status}
+                        options={STATUS_OPTIONS}
+                        onChange={(v) => setStatus(v as never)}
+                      />
+                    }
+                  >
                     Status
                   </SortableHead>
                   <SortableHead column="duration" current={sortBy} dir={sortDir} onSort={setSort}>
@@ -252,7 +316,7 @@ export function ServicesPage(): JSX.Element {
                       </TableCell>
                       <TableCell className="text-sm">{s.category}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="gap-1.5 font-normal">
+                        <Badge variant="outline" className="gap-1.5 font-bold">
                           <Building2 className="h-3 w-3" />
                           {s.company.name}
                         </Badge>
@@ -260,8 +324,8 @@ export function ServicesPage(): JSX.Element {
                       <TableCell>
                         <StatusBadge status={s.status} />
                       </TableCell>
-                      <TableCell className="text-sm tabular-nums text-muted-foreground">
-                        {formatDuration(s.durationMinutes)}
+                      <TableCell className="text-sm tabular-nums">
+                        {s.durationMinutes} minutes
                       </TableCell>
                       {isAdmin ? (
                         <TableCell className="w-12">
@@ -297,6 +361,13 @@ export function ServicesPage(): JSX.Element {
             </Table>
           </div>
 
+          {/* Small "Showing X–Y of Z" line above the controls — matches the
+              two-row pagination footer in the design preview. */}
+          {total > 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Showing {rangeStart}–{rangeEnd} of {total}
+            </p>
+          ) : null}
           <div className="flex flex-col items-center justify-between gap-3 text-sm sm:flex-row">
             <span className="text-muted-foreground">
               {total === 0
@@ -371,30 +442,42 @@ interface SortableHeadProps {
   current: SortableColumn | undefined;
   dir: "asc" | "desc" | undefined;
   onSort: (column: SortableColumn) => void;
+  /** Optional filter affordance rendered next to the sort button (e.g. <ColumnFilter />). */
+  filter?: React.ReactNode;
   children: React.ReactNode;
 }
 
-function SortableHead({ column, current, dir, onSort, children }: SortableHeadProps): JSX.Element {
+function SortableHead({
+  column,
+  current,
+  dir,
+  onSort,
+  filter,
+  children,
+}: SortableHeadProps): JSX.Element {
   const active = current === column;
   return (
-    <TableHead>
-      <button
-        type="button"
-        onClick={() => onSort(column)}
-        className={cn(
-          "inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground",
-          active && "text-foreground",
-        )}
-      >
-        {children}
-        {active && dir === "asc" ? (
-          <ArrowUp className="h-3 w-3" />
-        ) : active && dir === "desc" ? (
-          <ArrowDown className="h-3 w-3" />
-        ) : (
-          <ArrowUpDown className="h-3 w-3 opacity-50" />
-        )}
-      </button>
+    <TableHead className="h-12 py-3">
+      <div className="inline-flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onSort(column)}
+          className={cn(
+            "inline-flex items-center gap-1.5 text-sm font-medium text-foreground/80 transition-colors hover:text-foreground",
+            active && "text-foreground",
+          )}
+        >
+          {children}
+          {active && dir === "asc" ? (
+            <ArrowUp className="h-3.5 w-3.5" />
+          ) : active && dir === "desc" ? (
+            <ArrowDown className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronsUpDown className="h-3.5 w-3.5 opacity-60" />
+          )}
+        </button>
+        {filter}
+      </div>
     </TableHead>
   );
 }

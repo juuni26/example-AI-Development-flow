@@ -10,10 +10,13 @@ const badgeVariants = cva(
         default: "border-transparent bg-primary text-primary-foreground",
         secondary: "border-transparent bg-secondary text-secondary-foreground",
         outline: "border-border text-foreground",
-        // Status palette: tokens are tuned for AA contrast at the base text size.
-        active: "border-transparent bg-status-active-bg text-status-active-fg",
-        draft: "border-transparent bg-status-draft-bg text-status-draft-fg",
-        inactive: "border-transparent bg-status-inactive-bg text-status-inactive-fg",
+        // Status palette matches the design preview:
+        //   Active   = solid black pill, white text (highest emphasis)
+        //   Draft    = light neutral pill, dark text
+        //   Inactive = outline pill (white bg, dark text)
+        active: "border-transparent bg-foreground text-background",
+        draft: "border-transparent bg-muted text-foreground",
+        inactive: "border-border bg-background text-foreground",
         muted:
           "border-border/60 bg-muted text-muted-foreground",
       },

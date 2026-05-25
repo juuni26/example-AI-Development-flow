@@ -23,6 +23,7 @@ export function useCatalogParams(): {
   searchInput: string;
   status: Status | "all";
   category: Category | "all";
+  companyId: string | "all";
   sortBy: SortableColumn | undefined;
   sortDir: SortDir | undefined;
   page: number;
@@ -30,6 +31,7 @@ export function useCatalogParams(): {
   setSearch: (value: string) => void;
   setStatus: (value: Status | "all") => void;
   setCategory: (value: Category | "all") => void;
+  setCompanyId: (value: string | "all") => void;
   setSort: (column: SortableColumn) => void;
   setPage: (page: number) => void;
   setPageSize: (size: number) => void;
@@ -39,6 +41,10 @@ export function useCatalogParams(): {
   const searchInput = params.get("search") ?? "";
   const status = parseEnum(statusSchema, params.get("status")) ?? "all";
   const category = parseEnum(categorySchema, params.get("category")) ?? "all";
+  const rawCompanyId = params.get("companyId");
+  // Cheap UUID-ish gate (not exhaustive) — invalid values silently fall back.
+  const companyId: string | "all" =
+    rawCompanyId && /^[0-9a-f-]{36}$/i.test(rawCompanyId) ? rawCompanyId : "all";
   const sortBy = parseEnum(sortableColumnSchema, params.get("sortBy"));
   const sortDir = parseEnum(sortDirSchema, params.get("sortDir"));
   const rawPage = params.get("page");
@@ -66,12 +72,13 @@ export function useCatalogParams(): {
         search: searchInput.trim() || undefined,
         status: status === "all" ? undefined : status,
         category: category === "all" ? undefined : category,
+        companyId: companyId === "all" ? undefined : companyId,
         sortBy,
         sortDir,
         page,
         pageSize,
       }),
-    [searchInput, status, category, sortBy, sortDir, page, pageSize],
+    [searchInput, status, category, companyId, sortBy, sortDir, page, pageSize],
   );
 
   const patch = useCallback(
@@ -98,6 +105,10 @@ export function useCatalogParams(): {
     (value: Category | "all") => patch({ category: value === "all" ? null : value, page: "1" }),
     [patch],
   );
+  const setCompanyId = useCallback(
+    (value: string | "all") => patch({ companyId: value === "all" ? null : value, page: "1" }),
+    [patch],
+  );
   const setSort = useCallback(
     (column: SortableColumn) => {
       // Tri-state: asc → desc → none (clears sort, server default kicks in).
@@ -122,6 +133,7 @@ export function useCatalogParams(): {
     searchInput,
     status,
     category,
+    companyId,
     sortBy,
     sortDir,
     page,
@@ -129,6 +141,7 @@ export function useCatalogParams(): {
     setSearch,
     setStatus,
     setCategory,
+    setCompanyId,
     setSort,
     setPage,
     setPageSize,

@@ -72,6 +72,7 @@ export const listServicesQuerySchema = z.object({
   search: z.string().trim().max(200).optional(),
   status: statusSchema.optional(),
   category: categorySchema.optional(),
+  companyId: z.string().uuid().optional(),
   sortBy: sortableColumnSchema.optional(),
   sortDir: sortDirSchema.optional(),
   page: z.coerce.number().int().min(1).default(1),

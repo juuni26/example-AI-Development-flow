@@ -220,6 +220,7 @@ export class ServicesService {
     }
     if (query.status) where.push(eq(services.status, query.status));
     if (query.category) where.push(eq(services.category, query.category));
+    if (query.companyId) where.push(eq(services.companyId, query.companyId));
     return where;
   }
 
