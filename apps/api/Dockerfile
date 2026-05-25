@@ -2,13 +2,15 @@
 # Build context: workspace ROOT (so apps/api and packages/shared are both reachable).
 
 # ---- 1. deps: install the workspace once, cache by lockfile ----
-FROM oven/bun:1.1.27-alpine AS deps
+# Debian-based bun image (not alpine) avoids native-build friction from
+# optional postinstall scripts pulled in by testcontainers transitive deps.
+FROM oven/bun:1.1.27 AS deps
 WORKDIR /repo
 COPY package.json bun.lock* ./
 COPY tsconfig.base.json ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/shared/package.json ./packages/shared/
-RUN bun install --frozen-lockfile
+RUN bun install --frozen-lockfile --ignore-scripts
 
 # ---- 2. source: bring in the actual code on top of deps ----
 FROM deps AS source
@@ -31,7 +33,7 @@ WORKDIR /repo/apps/api
 CMD ["bun", "run", "src/db/seed.ts"]
 
 # ---- 6. runtime: minimal image that runs the compiled Nest app ----
-FROM oven/bun:1.1.27-alpine AS runtime
+FROM oven/bun:1.1.27-slim AS runtime
 WORKDIR /repo
 ENV NODE_ENV=production
 COPY --from=build /repo/package.json ./package.json

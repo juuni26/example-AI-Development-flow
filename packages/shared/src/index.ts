@@ -1,6 +1,3 @@
-export const SHARED_PACKAGE_NAME = "@cleandrop/shared" as const;
+export * from "./auth";
 
-export type ScaffoldProbe = {
-  ok: true;
-  message: "cross-stack shared package wired";
-};
+export const SHARED_PACKAGE_NAME = "@cleandrop/shared" as const;

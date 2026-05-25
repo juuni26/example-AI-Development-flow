@@ -1,5 +1,15 @@
-// Real domain tables (users, services, companies, refresh_tokens) arrive in
-// subsequent slices. This file exists now so drizzle-kit has a target and so
-// the migrate runner has something to do once the first slice lands.
+import { pgEnum, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 
-export {};
+export const roleEnum = pgEnum("role", ["admin", "user"]);
+
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  role: roleEnum("role").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type UserRow = typeof users.$inferSelect;
+export type NewUserRow = typeof users.$inferInsert;

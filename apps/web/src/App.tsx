@@ -1,47 +1,36 @@
-import { useEffect, useState } from "react";
-import { SHARED_PACKAGE_NAME } from "@cleandrop/shared";
-
-type HealthResponse = { status: string; shared: string };
-
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+import type { JSX } from "react";
+import { useEffect } from "react";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { LoginPage } from "@/pages/Login";
+import { ServicesPage } from "@/pages/Services";
+import { RequireAuth } from "@/routes/RequireAuth";
+import { onSessionExpired } from "@/lib/api";
 
 export function App(): JSX.Element {
-  const [health, setHealth] = useState<HealthResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
+  // When axios sees a 401, drop the user back at /login with a `next` hint
+  // pointing at whatever they were trying to do.
   useEffect(() => {
-    fetch(`${API_URL}/healthz`)
-      .then((r) => {
-        if (!r.ok) throw new Error(`api responded ${r.status}`);
-        return r.json() as Promise<HealthResponse>;
-      })
-      .then(setHealth)
-      .catch((e: Error) => setError(e.message));
-  }, []);
+    return onSessionExpired(() => {
+      const next = encodeURIComponent(window.location.pathname + window.location.search);
+      navigate(`/login?next=${next}`, { replace: true });
+    });
+  }, [navigate]);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-4 p-8">
-      <h1 className="text-2xl font-semibold tracking-tight">Cleandrop scaffold</h1>
-      <p className="text-sm text-neutral-600">
-        Monorepo, Docker, and the cross-stack shared package are wired. Real domain
-        slices land in subsequent issues.
-      </p>
-      <dl className="rounded-lg border border-neutral-200 bg-white p-4 text-sm">
-        <div className="flex justify-between">
-          <dt className="text-neutral-500">Shared package</dt>
-          <dd className="font-mono">{SHARED_PACKAGE_NAME}</dd>
-        </div>
-        <div className="mt-2 flex justify-between">
-          <dt className="text-neutral-500">API health</dt>
-          <dd className="font-mono">
-            {health ? `${health.status} (${health.shared})` : error ? `error: ${error}` : "checking…"}
-          </dd>
-        </div>
-        <div className="mt-2 flex justify-between">
-          <dt className="text-neutral-500">API URL</dt>
-          <dd className="font-mono">{API_URL}</dd>
-        </div>
-      </dl>
-    </main>
+    <Routes>
+      <Route path="/" element={<Navigate to="/services" replace />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/services"
+        element={
+          <RequireAuth>
+            <ServicesPage />
+          </RequireAuth>
+        }
+      />
+      <Route path="*" element={<Navigate to="/services" replace />} />
+    </Routes>
   );
 }
