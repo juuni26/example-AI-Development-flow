@@ -43,9 +43,13 @@ export function LoginPage(): JSX.Element {
     setFormError(null);
     try {
       const res = await api.post<LoginResponse>("/auth/login", values);
-      setAuth({ accessToken: res.data.accessToken, user: res.data.user });
+      setAuth({
+        accessToken: res.data.accessToken,
+        refreshToken: res.data.refreshToken,
+        user: res.data.user,
+      });
       navigate(next, { replace: true });
-    } catch (err) {
+    } catch {
       // The README is explicit: never reveal which field was wrong.
       setFormError("Invalid email or password");
     }

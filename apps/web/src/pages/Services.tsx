@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { User } from "@cleandrop/shared";
 import { api } from "@/lib/api";
+import { readAuth } from "@/lib/auth-store";
 import { useAuth } from "@/lib/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,7 @@ export function ServicesPage(): JSX.Element {
   const navigate = useNavigate();
   const [me, setMe] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
 
   // Calls /me on mount to prove the token is valid against the API and to
   // pick up any drift between the cached user and the server's view.
@@ -30,9 +32,23 @@ export function ServicesPage(): JSX.Element {
     };
   }, []);
 
-  const onSignOut = (): void => {
-    signOut();
-    navigate("/login", { replace: true });
+  const onSignOut = async (): Promise<void> => {
+    if (signingOut) return;
+    setSigningOut(true);
+    // Snapshot the refresh token BEFORE we clear local state — the logout
+    // endpoint needs it to revoke the row on the server.
+    const snapshot = readAuth();
+    try {
+      if (snapshot) {
+        await api.post("/auth/logout", { refreshToken: snapshot.refreshToken });
+      }
+    } catch {
+      // Server-side revocation is best-effort during logout. If the network
+      // dies, we still want to clear local state so the user is logged out.
+    } finally {
+      signOut();
+      navigate("/login", { replace: true });
+    }
   };
 
   return (
@@ -42,8 +58,8 @@ export function ServicesPage(): JSX.Element {
           <h1 className="text-2xl font-semibold tracking-tight">Services</h1>
           <p className="text-sm text-muted-foreground">Manage your service catalog</p>
         </div>
-        <Button variant="outline" size="sm" onClick={onSignOut}>
-          Sign out
+        <Button variant="outline" size="sm" onClick={onSignOut} disabled={signingOut}>
+          {signingOut ? "Signing out…" : "Sign out"}
         </Button>
       </header>
 
@@ -61,7 +77,7 @@ export function ServicesPage(): JSX.Element {
 
       <p className="text-xs text-muted-foreground">
         Catalog table, filters, sorting, and admin actions land in subsequent slices. This page
-        currently proves the protected route and the /me round-trip.
+        currently proves the protected route, the /me round-trip, and refresh-token rotation.
       </p>
     </main>
   );
