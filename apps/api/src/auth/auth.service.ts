@@ -48,45 +48,34 @@ export class AuthService {
   }
 
   /**
-   * Validates the presented refresh token, rotates it (revokes old + issues
-   * new), and returns a fresh access+refresh pair.
-   *
-   * The "claim" step is a single atomic `UPDATE … RETURNING` (see
-   * {@link RefreshTokenService.claimForRotation}). Two concurrent refresh
-   * calls presenting the same token deterministically resolve to one
-   * winner — losers receive `already_revoked`, which triggers the
-   * reuse-detection cascade. This eliminates the read-then-write race
-   * window that a `find → check → revoke → issue` sequence would have.
+   * Rotates the presented refresh token and returns a fresh access+refresh
+   * pair. The race-safe claim + reuse-detection cascade + expiry decision
+   * all live inside {@link RefreshTokenService.exchange}; this method only
+   * maps the outcome to an HTTP response and, on success, mints the new
+   * access token and issues the linked-back refresh row.
    */
   async refreshTokens(refreshToken: string): Promise<RefreshResponse> {
-    const claim = await this.refresh.claimForRotation(refreshToken);
+    const outcome = await this.refresh.exchange(refreshToken);
 
-    if (claim.kind === "not_found") {
-      throw new UnauthorizedException("Invalid refresh token");
+    switch (outcome.kind) {
+      case "invalid":
+        throw new UnauthorizedException("Invalid refresh token");
+      case "expired":
+        throw new UnauthorizedException("Refresh token expired");
+      case "reused":
+        throw new UnauthorizedException("Refresh token reuse detected; session terminated");
+      case "ok":
+        break;
     }
 
-    if (claim.kind === "already_revoked") {
-      // Either a reuse attack or we lost the race to a concurrent refresh
-      // from the same client. Defensive move: kill every refresh row for
-      // this user. Legitimate concurrent flows recover by re-authenticating.
-      await this.refresh.revokeAllForUser(claim.userId);
-      throw new UnauthorizedException("Refresh token reuse detected; session terminated");
-    }
-
-    if (claim.expiresAt.getTime() <= Date.now()) {
-      // Row was claimed (revoked) but it's expired — same outcome as a
-      // freshly-expired token. No cascade.
-      throw new UnauthorizedException("Refresh token expired");
-    }
-
-    const user = await this.users.findById(claim.userId);
+    const user = await this.users.findById(outcome.userId);
     if (!user) {
       // Defensive — user was deleted between issuing and refresh.
       throw new UnauthorizedException("User no longer exists");
     }
 
     const accessToken = await this.signAccessToken(user.id, user.email, user.role);
-    const { plaintext: nextRefresh } = await this.refresh.issue(user.id, claim.rowId);
+    const { plaintext: nextRefresh } = await this.refresh.issue(user.id, outcome.previousRowId);
 
     return { accessToken, refreshToken: nextRefresh };
   }

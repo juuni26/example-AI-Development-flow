@@ -43,7 +43,7 @@ export function ColumnFilter<T extends string>({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={`Filter by ${label.toLowerCase()}`}
+          aria-label={`Filter ${label.toLowerCase()} column`}
           className={cn(
             "inline-flex h-5 w-5 items-center justify-center rounded text-muted-foreground/70 transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
             active && "text-foreground",

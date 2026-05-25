@@ -3,8 +3,8 @@ import { test as base, expect, type Page } from "@playwright/test";
 export const API_URL = process.env.E2E_API_URL ?? "http://localhost:3001";
 
 export const CREDENTIALS = {
-  admin: { email: "admin@cleandrop.test", password: "admin123" },
-  user: { email: "user@cleandrop.test", password: "user123" },
+  admin: { email: "admin@cleandrop.test", password: "Cleandrop!Admin-2026" },
+  user: { email: "user@cleandrop.test", password: "Cleandrop!User-2026" },
 } as const;
 
 /**

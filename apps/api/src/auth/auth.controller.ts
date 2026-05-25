@@ -1,5 +1,5 @@
 import { Body, Controller, HttpCode, Post } from "@nestjs/common";
-import { ApiOperation, ApiTags } from "@nestjs/swagger";
+import { ApiOperation, ApiResponse, ApiTags } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
 import { createZodDto } from "nestjs-zod";
 import {
@@ -10,6 +10,7 @@ import {
   type RefreshResponse,
 } from "@cleandrop/shared";
 import { AuthService } from "./auth.service";
+import { examples } from "../openapi-examples";
 
 class LoginDto extends createZodDto(loginRequestSchema) {}
 class RefreshDto extends createZodDto(refreshRequestSchema) {}
@@ -29,6 +30,21 @@ export class AuthController {
   @ApiOperation({
     summary: "Exchange email + password for an access JWT and refresh token",
   })
+  @ApiResponse({
+    status: 200,
+    description: "Authenticated. Returns access + refresh tokens and the user.",
+    schema: { example: examples.login.success },
+  })
+  @ApiResponse({
+    status: 400,
+    description: "Malformed body (failed Zod validation).",
+    schema: { example: examples.login.badBody },
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Invalid email or password. Does not distinguish which field was wrong.",
+    schema: { example: examples.login.invalidCredentials },
+  })
   async login(@Body() body: LoginDto): Promise<LoginResponse> {
     return this.auth.login(body.email, body.password);
   }
@@ -39,6 +55,17 @@ export class AuthController {
     summary:
       "Rotate the refresh token. Replaying a revoked token cascade-revokes the whole chain.",
   })
+  @ApiResponse({
+    status: 200,
+    description: "Rotated. Old refresh row is revoked; the returned pair is the new active session.",
+    schema: { example: examples.refresh.success },
+  })
+  @ApiResponse({
+    status: 401,
+    description:
+      "Token unknown, expired, or already revoked. Reuse of a revoked token cascade-revokes every refresh row for the user.",
+    schema: { example: examples.refresh.reused },
+  })
   async refresh(@Body() body: RefreshDto): Promise<RefreshResponse> {
     return this.auth.refreshTokens(body.refreshToken);
   }
@@ -46,6 +73,7 @@ export class AuthController {
   @Post("logout")
   @HttpCode(204)
   @ApiOperation({ summary: "Revoke the presented refresh token (idempotent)" })
+  @ApiResponse({ status: 204, description: "Revoked (or already revoked — idempotent)." })
   async logout(@Body() body: LogoutDto): Promise<void> {
     await this.auth.logout(body.refreshToken);
   }

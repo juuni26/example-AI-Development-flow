@@ -15,19 +15,27 @@ export interface IssuedRefresh {
 }
 
 /**
- * Outcome of `claimForRotation`. Encodes the three possible states the
- * rotation needs to react to atomically:
+ * Outcome of a rotation exchange. Encodes every state the caller needs to
+ * react to. The cascade-revoke for `reused` has already been performed
+ * before this value is returned — the caller's only job is to map the
+ * outcome to an HTTP response (and, on `ok`, issue the new pair).
  *
- * - `claimed`: this caller won the race, the row is now revoked, the
- *   caller may safely issue a new pair linked back to `rowId`.
- * - `not_found`: no row matches the presented token (unknown / replayed
- *   after deletion). Caller should 401, no cascade.
- * - `already_revoked`: row exists but was already revoked by someone
- *   else. Either a reuse attack or a race we lost — caller should
- *   trigger the reuse-detection cascade (revoke all rows for `userId`)
- *   and 401.
+ * - `ok`: token was valid and unexpired; the presented row is now revoked
+ *   and `previousRowId` should be passed to `issue()` as `replacedById`
+ *   so the rotation chain is linkable.
+ * - `invalid`: no row matches the presented token (unknown / forged).
+ * - `expired`: row was claimed but its `expires_at` is in the past. No
+ *   cascade — same outcome as "freshly expired."
+ * - `reused`: row exists but was already revoked. Cascade has been
+ *   triggered (every refresh row for the user is now revoked).
  */
-export type ClaimResult =
+export type RotationOutcome =
+  | { kind: "ok"; userId: string; previousRowId: string }
+  | { kind: "invalid" }
+  | { kind: "expired" }
+  | { kind: "reused" };
+
+type ClaimResult =
   | { kind: "claimed"; rowId: string; userId: string; expiresAt: Date }
   | { kind: "not_found" }
   | { kind: "already_revoked"; userId: string };
@@ -54,15 +62,43 @@ export class RefreshTokenService {
   }
 
   /**
+   * Runs the rotation decision end-to-end: atomic claim → expiry check →
+   * reuse-detection cascade. The whole security invariant lives here so a
+   * reader doesn't have to cross files to answer "what happens when X is
+   * presented?". The caller maps the returned {@link RotationOutcome} to an
+   * HTTP response and, on `ok`, issues the new pair linked via
+   * `previousRowId`.
+   */
+  async exchange(plaintext: string): Promise<RotationOutcome> {
+    const claim = await this.claimForRotation(plaintext);
+
+    if (claim.kind === "not_found") return { kind: "invalid" };
+
+    if (claim.kind === "already_revoked") {
+      // Reuse attack (or a lost race against a concurrent refresh from the
+      // same client). Defensive move: kill every refresh row for this user.
+      // Legitimate concurrent flows recover by re-authenticating.
+      await this.revokeAllForUser(claim.userId);
+      return { kind: "reused" };
+    }
+
+    if (claim.expiresAt.getTime() <= Date.now()) {
+      // Row was claimed (and thus revoked) but it's expired. Same outcome
+      // as a freshly-expired token — no cascade.
+      return { kind: "expired" };
+    }
+
+    return { kind: "ok", userId: claim.userId, previousRowId: claim.rowId };
+  }
+
+  /**
    * Atomically attempts to claim a refresh token for rotation. Uses a single
    * SQL statement (`UPDATE … WHERE token_hash = $1 AND revoked_at IS NULL
    * RETURNING …`) so concurrent refreshes presenting the same token
    * deterministically resolve to one winner — exactly one row is updated,
    * losers see `already_revoked`.
-   *
-   * This is the foundation of the race-safe rotation in {@link AuthService.refreshTokens}.
    */
-  async claimForRotation(plaintext: string): Promise<ClaimResult> {
+  private async claimForRotation(plaintext: string): Promise<ClaimResult> {
     const tokenHash = this.hash(plaintext);
 
     // Step 1 — atomic claim.
@@ -120,12 +156,12 @@ export class RefreshTokenService {
   }
 
   /**
-   * Reuse detection: when a previously-revoked token is presented again, the
-   * canonical defensive move is to revoke EVERY refresh row for that user.
-   * The attacker holds a stolen token; the legitimate client either has
-   * already-rotated tokens (now all revoked) or is forced to log in again.
+   * Reuse detection cascade: when a previously-revoked token is presented
+   * again, revoke EVERY refresh row for that user. The attacker holds a
+   * stolen token; the legitimate client is forced to log in again.
+   * Invoked from {@link exchange} on the `reused` path.
    */
-  async revokeAllForUser(userId: string): Promise<void> {
+  private async revokeAllForUser(userId: string): Promise<void> {
     await this.db
       .update(refreshTokens)
       .set({ revokedAt: sql`now()` })

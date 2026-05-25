@@ -35,6 +35,7 @@ export function useCatalogParams(): {
   setSort: (column: SortableColumn) => void;
   setPage: (page: number) => void;
   setPageSize: (size: number) => void;
+  clearFilters: () => void;
 } {
   const [params, setParams] = useSearchParams();
 
@@ -127,6 +128,21 @@ export function useCatalogParams(): {
     (size: number) => patch({ pageSize: String(size), page: "1" }),
     [patch],
   );
+  // Clears every filter in ONE patch. Calling setSearch/setStatus/setCategory
+  // back-to-back doesn't work: each derives `next` from the same render-time
+  // `params` snapshot, so React batches the setParams calls and only the
+  // last one's diff survives.
+  const clearFilters = useCallback(
+    () =>
+      patch({
+        search: null,
+        status: null,
+        category: null,
+        companyId: null,
+        page: "1",
+      }),
+    [patch],
+  );
 
   return {
     query,
@@ -145,6 +161,7 @@ export function useCatalogParams(): {
     setSort,
     setPage,
     setPageSize,
+    clearFilters,
   };
 }
 

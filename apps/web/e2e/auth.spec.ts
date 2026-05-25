@@ -45,7 +45,11 @@ test.describe("authentication flow", () => {
 
   test("sign-out from the sidebar clears state and redirects to /login", async ({ page }) => {
     await loginAs(page, "user");
-    await page.getByRole("button", { name: /sign out/i }).click();
+    // The sidebar footer is a popover: click the avatar to open it, then the
+    // Sign out menu item (CONTEXT.md: "Click opens a popover with a Logout button").
+    const sidebar = page.getByRole("complementary", { name: "Primary navigation" });
+    await sidebar.getByRole("button", { name: /open account menu/i }).click();
+    await page.getByRole("menuitem", { name: /sign out/i }).click();
     await page.waitForURL("**/login");
     // Hitting /services again should bounce back to /login since the session is gone.
     await page.goto("/services");

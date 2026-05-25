@@ -18,14 +18,14 @@ const ACCOUNTS: Account[] = [
     role: "admin",
     label: "Administrator",
     email: "admin@cleandrop.test",
-    password: "admin123",
+    password: "Cleandrop!Admin-2026",
     description: "Full CRUD on the catalog",
   },
   {
     role: "user",
     label: "Read-only user",
     email: "user@cleandrop.test",
-    password: "user123",
+    password: "Cleandrop!User-2026",
     description: "Browse-only access",
   },
 ];

@@ -61,9 +61,9 @@ export function AppShell({ children }: { children: ReactNode }): JSX.Element {
   };
 
   const roleLabel = auth?.user.role === "admin" ? "Administrator" : "Read-only";
-  // Display name shown next to the avatar icon in the sidebar footer.
-  // Matches the "Dev Admin" treatment in the design reference.
-  const displayName = auth?.user.role === "admin" ? "Dev Admin" : "Dev User";
+  // Display name in the sidebar footer: the email local-part (e.g. `admin`
+  // from `admin@cleandrop.test`). Matches the contract in CONTEXT.md.
+  const displayName = auth?.user.email.split("@")[0] ?? "";
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -255,7 +255,12 @@ function SidebarBody({
                 aria-hidden="true"
               />
               {!collapsed ? (
-                <span className="truncate text-sm font-medium text-foreground">{displayName}</span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate text-sm font-medium text-foreground">{displayName}</span>
+                  <span className="truncate text-[11px] font-normal uppercase tracking-wide text-muted-foreground">
+                    {roleLabel}
+                  </span>
+                </span>
               ) : null}
             </button>
           </DropdownMenuTrigger>

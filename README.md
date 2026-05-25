@@ -17,7 +17,7 @@ open http://localhost:8080            # log in with the demo accounts on the pag
 open http://localhost:3000/api/docs   # OpenAPI Swagger UI
 ```
 
-Seeded credentials are surfaced on the login page itself with click-to-copy buttons. `admin@cleandrop.test / admin123` for full CRUD; `user@cleandrop.test / user123` for read-only.
+Seeded credentials are surfaced on the login page itself with click-to-copy buttons. `admin@cleandrop.test / Cleandrop!Admin-2026` for full CRUD; `user@cleandrop.test / Cleandrop!User-2026` for read-only.
 
 ---
 

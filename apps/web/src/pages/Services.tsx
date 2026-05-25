@@ -1,8 +1,9 @@
 import type { JSX } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
+  Briefcase,
   Building2,
   ChevronLeft,
   ChevronRight,
@@ -87,6 +88,7 @@ export function ServicesPage(): JSX.Element {
     setSort,
     setPage,
     setPageSize,
+    clearFilters,
   } = useCatalogParams();
 
   // Companies are fetched once for both the company column filter and the
@@ -96,12 +98,21 @@ export function ServicesPage(): JSX.Element {
 
   // Local input state mirrors the URL `search` param but is debounced before
   // pushing back, so typing does not refire the query on every keystroke.
+  // userTypedRef gates the debounced push so an external URL change (e.g.
+  // Clear filters resetting the input to "") cannot race a stale
+  // `debouncedDraft` and repopulate ?search= with the old typed value.
   const [draft, setDraft] = useState(searchInput);
-  useEffect(() => setDraft(searchInput), [searchInput]);
+  const userTypedRef = useRef(false);
+  useEffect(() => {
+    setDraft(searchInput);
+    userTypedRef.current = false;
+  }, [searchInput]);
   const debouncedDraft = useDebounce(draft, 250);
   useEffect(() => {
+    if (!userTypedRef.current) return;
+    if (debouncedDraft !== draft) return;
     if (debouncedDraft !== searchInput) setSearch(debouncedDraft);
-  }, [debouncedDraft, searchInput, setSearch]);
+  }, [debouncedDraft, draft, searchInput, setSearch]);
 
   // The query uses the URL-bound query directly so the debounced search has
   // already been written to the URL before the request fires.
@@ -133,8 +144,8 @@ export function ServicesPage(): JSX.Element {
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Services</h1>
-            <Badge variant="muted" className="gap-1.5 text-[11px]">
-              <Building2 className="h-3 w-3" />
+            <Badge variant="outline" className="gap-1.5 text-[11px] font-bold">
+              <Briefcase className="h-3 w-3" />
               Platform-wide
             </Badge>
           </div>
@@ -163,7 +174,10 @@ export function ServicesPage(): JSX.Element {
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={draft}
-                onChange={(e) => setDraft(e.target.value)}
+                onChange={(e) => {
+                  userTypedRef.current = true;
+                  setDraft(e.target.value);
+                }}
                 placeholder="Search services…"
                 className="h-11 rounded-lg pl-10 text-sm"
                 aria-label="Search services"
@@ -292,11 +306,7 @@ export function ServicesPage(): JSX.Element {
                         <button
                           type="button"
                           className="text-xs text-primary underline-offset-4 hover:underline"
-                          onClick={() => {
-                            setSearch("");
-                            setStatus("all");
-                            setCategory("all");
-                          }}
+                          onClick={clearFilters}
                         >
                           Clear filters
                         </button>

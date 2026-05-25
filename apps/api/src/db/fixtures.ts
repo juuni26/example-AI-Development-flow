@@ -11,8 +11,8 @@ import type * as schema from "./schema";
 export type Db = PostgresJsDatabase<typeof schema>;
 
 export const SEED_USERS = [
-  { email: "admin@cleandrop.test", password: "admin123", role: "admin" as const },
-  { email: "user@cleandrop.test", password: "user123", role: "user" as const },
+  { email: "admin@cleandrop.test", password: "Cleandrop!Admin-2026", role: "admin" as const },
+  { email: "user@cleandrop.test", password: "Cleandrop!User-2026", role: "user" as const },
 ];
 
 export const SEED_COMPANIES = [

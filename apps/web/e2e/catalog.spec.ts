@@ -85,4 +85,40 @@ test.describe("catalog read path (as user)", () => {
     // No per-row "Actions for X" buttons either.
     await expect(page.getByRole("button", { name: /actions for/i })).toHaveCount(0);
   });
+
+  test("Clear filters in the empty state resets EVERY filter (regression: batched state)", async ({
+    page,
+  }) => {
+    // Drive into an empty-result state by combining filters that don't overlap
+    // any seeded service. Each filter goes into the URL independently so we
+    // know all three are active simultaneously.
+    await page.getByLabel("Search services").fill("zzz-no-match-zzz");
+
+    await page.getByLabel("Filter by status").click();
+    await page.getByRole("option", { name: "Draft" }).click();
+
+    await page.getByLabel("Filter by category").click();
+    await page.getByRole("option", { name: "Specialty" }).click();
+
+    // All three filter params are in the URL.
+    await expect(page).toHaveURL(/search=zzz-no-match-zzz/);
+    await expect(page).toHaveURL(/status=Draft/);
+    await expect(page).toHaveURL(/category=Specialty/);
+
+    // Empty state is shown with the Clear filters affordance.
+    await expect(page.getByText("No services match these filters.")).toBeVisible();
+    await page.getByRole("button", { name: /clear filters/i }).click();
+
+    // One click must clear ALL filter params, not just the last one set.
+    // The bug this guards against: three sequential setState calls each
+    // derived `next` from the same stale `params` snapshot, so only the
+    // last setParams won — `search` and `status` lingered.
+    await expect(page).not.toHaveURL(/[?&]search=/);
+    await expect(page).not.toHaveURL(/[?&]status=/);
+    await expect(page).not.toHaveURL(/[?&]category=/);
+
+    // And the catalog now shows real rows again.
+    await expect(page.getByText("No services match these filters.")).toHaveCount(0);
+    await expect(page.getByRole("table").locator("tbody tr").first()).toBeVisible();
+  });
 });

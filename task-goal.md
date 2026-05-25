@@ -42,8 +42,8 @@ This README is the only place these credentials exist; there is no signup endpoi
 
 | Role | Email | Password |
 |---|---|---|
-| `admin` (full CRUD) | `admin@cleandrop.test` | `admin123` |
-| `user` (read-only) | `user@cleandrop.test` | `user123` |
+| `admin` (full CRUD) | `admin@cleandrop.test` | `Cleandrop!Admin-2026` |
+| `user` (read-only) | `user@cleandrop.test` | `Cleandrop!User-2026` |
 
 Passwords are stored as bcrypt hashes (`bcrypt.hash(plaintext, 10)`).
 
