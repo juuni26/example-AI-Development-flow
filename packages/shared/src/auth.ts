@@ -16,11 +16,30 @@ export const loginRequestSchema = z.object({
 });
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
 
-export const loginResponseSchema = z.object({
+// The token-bearing portion of any auth response.
+export const authTokensSchema = z.object({
   accessToken: z.string(),
+  refreshToken: z.string(),
+});
+export type AuthTokens = z.infer<typeof authTokensSchema>;
+
+export const loginResponseSchema = authTokensSchema.extend({
   user: userSchema,
 });
 export type LoginResponse = z.infer<typeof loginResponseSchema>;
+
+export const refreshRequestSchema = z.object({
+  refreshToken: z.string().min(1),
+});
+export type RefreshRequest = z.infer<typeof refreshRequestSchema>;
+
+export const refreshResponseSchema = authTokensSchema;
+export type RefreshResponse = z.infer<typeof refreshResponseSchema>;
+
+export const logoutRequestSchema = z.object({
+  refreshToken: z.string().min(1),
+});
+export type LogoutRequest = z.infer<typeof logoutRequestSchema>;
 
 // JWT access-token payload. `sub` is the user id, kept as a string for
 // portability across signing libraries.
