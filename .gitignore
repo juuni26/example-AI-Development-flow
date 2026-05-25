@@ -10,3 +10,6 @@ build/
 coverage/
 .turbo/
 .nest/
+playwright-report/
+test-results/
+.playwright/
