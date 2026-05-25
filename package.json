@@ -1,0 +1,22 @@
+{
+  "name": "cleandrop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Services catalog — Cleandrop fullstack take-home",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "bun --filter @cleandrop/api dev",
+    "dev:web": "bun --filter @cleandrop/web dev",
+    "build": "bun --filter '*' build",
+    "test:api": "bun --filter @cleandrop/api test"
+  },
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "devDependencies": {
+    "typescript": "5.5.4"
+  }
+}
