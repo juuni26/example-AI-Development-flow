@@ -1,93 +1,325 @@
 import type { JSX } from "react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import type { User } from "@cleandrop/shared";
-import { api } from "@/lib/api";
-import { readAuth } from "@/lib/auth-store";
-import { useAuth } from "@/lib/use-auth";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Building2,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+} from "lucide-react";
+import { formatDuration, type SortableColumn } from "@cleandrop/shared";
+import { AppShell } from "@/components/AppShell";
+import { StatusBadge } from "@/components/StatusBadge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
+import { useCatalogParams } from "@/lib/use-catalog-params";
+import { useDebounce } from "@/lib/use-debounce";
+import { useServicesQuery } from "@/lib/use-services-query";
+
+const PAGE_SIZE_OPTIONS = [6, 10, 25];
 
 export function ServicesPage(): JSX.Element {
-  const { auth, signOut } = useAuth();
-  const navigate = useNavigate();
-  const [me, setMe] = useState<User | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [signingOut, setSigningOut] = useState(false);
+  const {
+    query,
+    searchInput,
+    status,
+    category,
+    sortBy,
+    sortDir,
+    page,
+    pageSize,
+    setSearch,
+    setStatus,
+    setCategory,
+    setSort,
+    setPage,
+    setPageSize,
+  } = useCatalogParams();
 
-  // Calls /me on mount to prove the token is valid against the API and to
-  // pick up any drift between the cached user and the server's view.
+  // Local input state mirrors the URL `search` param but is debounced before
+  // pushing back, so typing does not refire the query on every keystroke.
+  const [draft, setDraft] = useState(searchInput);
+  useEffect(() => setDraft(searchInput), [searchInput]);
+  const debouncedDraft = useDebounce(draft, 250);
   useEffect(() => {
-    let cancelled = false;
-    api
-      .get<User>("/me")
-      .then((r) => {
-        if (!cancelled) setMe(r.data);
-      })
-      .catch((e: Error) => {
-        if (!cancelled) setError(e.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (debouncedDraft !== searchInput) setSearch(debouncedDraft);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedDraft]);
 
-  const onSignOut = async (): Promise<void> => {
-    if (signingOut) return;
-    setSigningOut(true);
-    // Snapshot the refresh token BEFORE we clear local state — the logout
-    // endpoint needs it to revoke the row on the server.
-    const snapshot = readAuth();
-    try {
-      if (snapshot) {
-        await api.post("/auth/logout", { refreshToken: snapshot.refreshToken });
-      }
-    } catch {
-      // Server-side revocation is best-effort during logout. If the network
-      // dies, we still want to clear local state so the user is logged out.
-    } finally {
-      signOut();
-      navigate("/login", { replace: true });
-    }
-  };
+  // The query uses the URL-bound query directly so the debounced search has
+  // already been written to the URL before the request fires.
+  const { data, isLoading, isError, error, isFetching, refetch } = useServicesQuery(query);
+
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const rangeEnd = Math.min(total, page * pageSize);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-4 py-10">
-      <header className="flex items-center justify-between">
+    <AppShell>
+      <header className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Services</h1>
-          <p className="text-sm text-muted-foreground">Manage your service catalog</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight">Services</h1>
+            <Badge variant="muted" className="gap-1.5">
+              <Building2 className="h-3 w-3" />
+              Platform-wide
+            </Badge>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">Manage your service catalog</p>
         </div>
-        <Button variant="outline" size="sm" onClick={onSignOut} disabled={signingOut}>
-          {signingOut ? "Signing out…" : "Sign out"}
-        </Button>
       </header>
 
+      {/* Summary cards land in #5. The four-slot grid is reserved here so the
+          layout does not jump when they arrive. */}
+      <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i} className="h-[108px]">
+            <CardContent className="flex h-full items-center justify-center p-0 text-xs text-muted-foreground">
+              {/* Placeholder; summary endpoint lands in slice #5. */}
+              &nbsp;
+            </CardContent>
+          </Card>
+        ))}
+      </section>
+
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Session</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
+          <CardTitle className="text-base">Catalog</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-2 text-sm">
-          <Row label="Email" value={me?.email ?? auth?.user.email ?? "—"} />
-          <Row label="Role" value={me?.role ?? auth?.user.role ?? "—"} />
-          <Row label="User id" value={(me?.id ?? auth?.user.id ?? "—") as string} mono />
-          {error ? <Row label="/me error" value={error} /> : null}
+        <CardContent className="space-y-4">
+          <div className="flex flex-col gap-3">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                placeholder="Search services…"
+                className="pl-9"
+                aria-label="Search services"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Select value={status} onValueChange={(v) => setStatus(v as never)}>
+                <SelectTrigger aria-label="Filter by status">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Draft">Draft</SelectItem>
+                  <SelectItem value="Inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={category} onValueChange={(v) => setCategory(v as never)}>
+                <SelectTrigger aria-label="Filter by category">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="Residential">Residential</SelectItem>
+                  <SelectItem value="Commercial">Commercial</SelectItem>
+                  <SelectItem value="Specialty">Specialty</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <SortableHead column="name" current={sortBy} dir={sortDir} onSort={setSort}>
+                    Name
+                  </SortableHead>
+                  <SortableHead column="category" current={sortBy} dir={sortDir} onSort={setSort}>
+                    Category
+                  </SortableHead>
+                  <SortableHead column="company" current={sortBy} dir={sortDir} onSort={setSort}>
+                    Company
+                  </SortableHead>
+                  <SortableHead column="status" current={sortBy} dir={sortDir} onSort={setSort}>
+                    Status
+                  </SortableHead>
+                  <SortableHead column="duration" current={sortBy} dir={sortDir} onSort={setSort}>
+                    Duration
+                  </SortableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: pageSize }).map((_, i) => (
+                    <TableRow key={`skeleton-${i}`}>
+                      {Array.from({ length: 5 }).map((_, j) => (
+                        <TableCell key={j}>
+                          <Skeleton className="h-4 w-3/4" />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : isError ? (
+                  <TableRow>
+                    <TableCell colSpan={5}>
+                      <div className="flex flex-col items-center gap-3 py-10 text-sm text-muted-foreground">
+                        <span>Could not load services. {error instanceof Error ? error.message : ""}</span>
+                        <Button variant="outline" size="sm" onClick={() => void refetch()}>
+                          Retry
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : data && data.data.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5}>
+                      <div className="flex flex-col items-center gap-2 py-10 text-sm">
+                        <span>No services match these filters.</span>
+                        <button
+                          type="button"
+                          className="text-xs text-primary underline-offset-4 hover:underline"
+                          onClick={() => {
+                            setSearch("");
+                            setStatus("all");
+                            setCategory("all");
+                          }}
+                        >
+                          Clear filters
+                        </button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  data?.data.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{s.name}</span>
+                          <span className="line-clamp-1 text-xs text-muted-foreground">
+                            {s.description}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">{s.category}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="gap-1.5 font-normal">
+                          <Building2 className="h-3 w-3" />
+                          {s.company.name}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={s.status} />
+                      </TableCell>
+                      <TableCell className="text-sm tabular-nums text-muted-foreground">
+                        {formatDuration(s.durationMinutes)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="flex flex-col items-center justify-between gap-3 text-sm sm:flex-row">
+            <span className="text-muted-foreground">
+              {total === 0
+                ? "0 services"
+                : `Showing ${rangeStart} to ${rangeEnd} of ${total} services`}
+              {isFetching && !isLoading ? " · refreshing…" : ""}
+            </span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Rows per page</span>
+                <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                  <SelectTrigger className="h-8 w-[72px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAGE_SIZE_OPTIONS.map((n) => (
+                      <SelectItem key={n} value={String(n)}>
+                        {n}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page - 1)}
+                  disabled={page <= 1}
+                >
+                  <ChevronLeft className="mr-1 h-4 w-4" /> Previous
+                </Button>
+                <span className="text-muted-foreground">
+                  Page {page} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(page + 1)}
+                  disabled={page >= totalPages}
+                >
+                  Next <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
-
-      <p className="text-xs text-muted-foreground">
-        Catalog table, filters, sorting, and admin actions land in subsequent slices. This page
-        currently proves the protected route, the /me round-trip, and refresh-token rotation.
-      </p>
-    </main>
+    </AppShell>
   );
 }
 
-function Row({ label, value, mono = false }: { label: string; value: string; mono?: boolean }): JSX.Element {
+interface SortableHeadProps {
+  column: SortableColumn;
+  current: SortableColumn | undefined;
+  dir: "asc" | "desc" | undefined;
+  onSort: (column: SortableColumn) => void;
+  children: React.ReactNode;
+}
+
+function SortableHead({ column, current, dir, onSort, children }: SortableHeadProps): JSX.Element {
+  const active = current === column;
   return (
-    <div className="flex items-center justify-between">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className={mono ? "font-mono" : ""}>{value}</dd>
-    </div>
+    <TableHead>
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className={cn(
+          "inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground",
+          active && "text-foreground",
+        )}
+      >
+        {children}
+        {active && dir === "asc" ? (
+          <ArrowUp className="h-3 w-3" />
+        ) : active && dir === "desc" ? (
+          <ArrowDown className="h-3 w-3" />
+        ) : (
+          <ArrowUpDown className="h-3 w-3 opacity-50" />
+        )}
+      </button>
+    </TableHead>
   );
 }

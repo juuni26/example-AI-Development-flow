@@ -15,6 +15,13 @@
       "when": 1779705225780,
       "tag": "0001_sharp_darkhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779705783182,
+      "tag": "0002_stiff_the_call",
+      "breakpoints": true
     }
   ]
 }
