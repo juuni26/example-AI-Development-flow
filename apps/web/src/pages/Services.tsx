@@ -302,9 +302,14 @@ export function ServicesPage(): JSX.Element {
             </span>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Rows per page</span>
+                <span id="rows-per-page-label" className="text-muted-foreground">
+                  Rows per page
+                </span>
                 <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
-                  <SelectTrigger className="h-8 w-[72px]">
+                  <SelectTrigger
+                    aria-labelledby="rows-per-page-label"
+                    className="h-8 w-[72px]"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

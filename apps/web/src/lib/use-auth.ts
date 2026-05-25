@@ -20,12 +20,36 @@ function notify(): void {
   for (const s of subscribers) s();
 }
 
+// Cached snapshot: useSyncExternalStore requires reference-stable reads, but
+// readAuth() reconstructs the object on every call. We cache the last result
+// and only mint a new object when the underlying values actually change.
+let cachedSnapshot: AuthSnapshot | null = null;
+function getStableSnapshot(): AuthSnapshot | null {
+  const next = readAuth();
+  if (next === null) {
+    cachedSnapshot = null;
+    return null;
+  }
+  if (
+    cachedSnapshot &&
+    cachedSnapshot.accessToken === next.accessToken &&
+    cachedSnapshot.refreshToken === next.refreshToken &&
+    cachedSnapshot.user.id === next.user.id &&
+    cachedSnapshot.user.email === next.user.email &&
+    cachedSnapshot.user.role === next.user.role
+  ) {
+    return cachedSnapshot;
+  }
+  cachedSnapshot = next;
+  return next;
+}
+
 export function useAuth(): {
   auth: AuthSnapshot | null;
   setAuth: (snapshot: AuthSnapshot) => void;
   signOut: () => void;
 } {
-  const auth = useSyncExternalStore(subscribe, readAuth, () => null);
+  const auth = useSyncExternalStore(subscribe, getStableSnapshot, () => null);
   return {
     auth,
     setAuth: (snapshot) => {
