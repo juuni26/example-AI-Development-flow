@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { APP_PIPE } from "@nestjs/core";
 import { ZodValidationPipe } from "nestjs-zod";
 import { AuthModule } from "./auth/auth.module";
+import { CompaniesModule } from "./companies/companies.module";
 import { DbModule } from "./db/db.module";
 import { HealthModule } from "./health/health.module";
 import { MeModule } from "./me/me.module";
@@ -9,7 +10,15 @@ import { ServicesModule } from "./services/services.module";
 import { UsersModule } from "./users/users.module";
 
 @Module({
-  imports: [DbModule, HealthModule, AuthModule, UsersModule, MeModule, ServicesModule],
+  imports: [
+    DbModule,
+    HealthModule,
+    AuthModule,
+    UsersModule,
+    MeModule,
+    ServicesModule,
+    CompaniesModule,
+  ],
   providers: [
     {
       provide: APP_PIPE,

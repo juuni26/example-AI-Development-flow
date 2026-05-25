@@ -7,13 +7,25 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
+  MoreHorizontal,
+  Pencil,
+  Plus,
   Search,
+  Trash2,
 } from "lucide-react";
-import { formatDuration, type SortableColumn } from "@cleandrop/shared";
+import { formatDuration, type Service, type SortableColumn } from "@cleandrop/shared";
 import { AppShell } from "@/components/AppShell";
+import { DeleteServiceDialog } from "@/components/DeleteServiceDialog";
+import { ServiceFormSheet } from "@/components/ServiceFormSheet";
 import { StatusBadge } from "@/components/StatusBadge";
 import { SummaryCards } from "@/components/SummaryCards";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -34,6 +46,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/use-auth";
 import { useCatalogParams } from "@/lib/use-catalog-params";
 import { useDebounce } from "@/lib/use-debounce";
 import { useServicesQuery } from "@/lib/use-services-query";
@@ -73,6 +86,20 @@ export function ServicesPage(): JSX.Element {
   // already been written to the URL before the request fires.
   const { data, isLoading, isError, error, isFetching, refetch } = useServicesQuery(query);
   const summary = useSummaryQuery();
+  const { auth } = useAuth();
+  const isAdmin = auth?.user.role === "admin";
+
+  // Admin UI state: sheet for add/edit, dialog for delete.
+  const [sheet, setSheet] = useState<{ open: boolean; service: Service | null }>({
+    open: false,
+    service: null,
+  });
+  const [pendingDelete, setPendingDelete] = useState<Service | null>(null);
+
+  const openCreate = (): void => setSheet({ open: true, service: null });
+  const openEdit = (service: Service): void => setSheet({ open: true, service });
+  const closeSheet = (open: boolean): void =>
+    setSheet((prev) => (open ? prev : { ...prev, open: false }));
 
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -101,6 +128,11 @@ export function ServicesPage(): JSX.Element {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
           <CardTitle className="text-base">Catalog</CardTitle>
+          {isAdmin ? (
+            <Button size="sm" variant="outline" onClick={openCreate}>
+              <Plus className="mr-1 h-4 w-4" /> Add
+            </Button>
+          ) : null}
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col gap-3">
@@ -159,13 +191,14 @@ export function ServicesPage(): JSX.Element {
                   <SortableHead column="duration" current={sortBy} dir={sortDir} onSort={setSort}>
                     Duration
                   </SortableHead>
+                  {isAdmin ? <TableHead className="w-12" /> : null}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   Array.from({ length: pageSize }).map((_, i) => (
                     <TableRow key={`skeleton-${i}`}>
-                      {Array.from({ length: 5 }).map((_, j) => (
+                      {Array.from({ length: isAdmin ? 6 : 5 }).map((_, j) => (
                         <TableCell key={j}>
                           <Skeleton className="h-4 w-3/4" />
                         </TableCell>
@@ -174,7 +207,7 @@ export function ServicesPage(): JSX.Element {
                   ))
                 ) : isError ? (
                   <TableRow>
-                    <TableCell colSpan={5}>
+                    <TableCell colSpan={isAdmin ? 6 : 5}>
                       <div className="flex flex-col items-center gap-3 py-10 text-sm text-muted-foreground">
                         <span>Could not load services. {error instanceof Error ? error.message : ""}</span>
                         <Button variant="outline" size="sm" onClick={() => void refetch()}>
@@ -185,7 +218,7 @@ export function ServicesPage(): JSX.Element {
                   </TableRow>
                 ) : data && data.data.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5}>
+                    <TableCell colSpan={isAdmin ? 6 : 5}>
                       <div className="flex flex-col items-center gap-2 py-10 text-sm">
                         <span>No services match these filters.</span>
                         <button
@@ -226,6 +259,33 @@ export function ServicesPage(): JSX.Element {
                       <TableCell className="text-sm tabular-nums text-muted-foreground">
                         {formatDuration(s.durationMinutes)}
                       </TableCell>
+                      {isAdmin ? (
+                        <TableCell className="w-12">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                aria-label={`Actions for ${s.name}`}
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onSelect={() => openEdit(s)}>
+                                <Pencil className="mr-2 h-4 w-4" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onSelect={() => setPendingDelete(s)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      ) : null}
                     </TableRow>
                   ))
                 )}
@@ -281,6 +341,18 @@ export function ServicesPage(): JSX.Element {
           </div>
         </CardContent>
       </Card>
+
+      <ServiceFormSheet
+        open={sheet.open}
+        service={sheet.service}
+        onOpenChange={closeSheet}
+      />
+      <DeleteServiceDialog
+        service={pendingDelete}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+      />
     </AppShell>
   );
 }
