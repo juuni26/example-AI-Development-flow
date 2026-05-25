@@ -3,19 +3,19 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium transition-colors",
+  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium leading-5 transition-colors",
   {
     variants: {
       variant: {
         default: "border-transparent bg-primary text-primary-foreground",
         secondary: "border-transparent bg-secondary text-secondary-foreground",
-        outline: "text-foreground",
-        success:
-          "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300",
-        warning:
-          "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300",
+        outline: "border-border text-foreground",
+        // Status palette: tokens are tuned for AA contrast at the base text size.
+        active: "border-transparent bg-status-active-bg text-status-active-fg",
+        draft: "border-transparent bg-status-draft-bg text-status-draft-fg",
+        inactive: "border-transparent bg-status-inactive-bg text-status-inactive-fg",
         muted:
-          "border-neutral-200 bg-neutral-100 text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300",
+          "border-border/60 bg-muted text-muted-foreground",
       },
     },
     defaultVariants: { variant: "default" },

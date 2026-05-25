@@ -1,23 +1,43 @@
 import type { JSX, ReactNode } from "react";
-import { Sparkles, Settings, LogOut } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  ChevronsLeft,
+  ChevronsRight,
+  LogOut,
+  Menu,
+  Settings,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/use-auth";
 import { readAuth } from "@/lib/auth-store";
 import { api } from "@/lib/api";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useSidebarCollapsed } from "@/lib/use-sidebar";
+import { cn } from "@/lib/utils";
 
 interface NavItem {
   label: string;
+  icon: JSX.Element;
   active?: boolean;
 }
 
-const NAV_ITEMS: NavItem[] = [{ label: "Services", active: true }];
+const NAV_ITEMS: NavItem[] = [
+  {
+    label: "Services",
+    icon: <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />,
+    active: true,
+  },
+];
 
 export function AppShell({ children }: { children: ReactNode }): JSX.Element {
   const { auth, signOut } = useAuth();
   const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
+  const { collapsed, toggle } = useSidebarCollapsed();
+  // The mobile sheet is a separate concern from the desktop collapse state.
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const onSignOut = async (): Promise<void> => {
     if (signingOut) return;
@@ -34,40 +54,215 @@ export function AppShell({ children }: { children: ReactNode }): JSX.Element {
   };
 
   const emailLocal = auth?.user.email.split("@")[0] ?? "";
+  const roleLabel = auth?.user.role === "admin" ? "Administrator" : "Read-only";
 
   return (
-    <div className="flex min-h-screen bg-muted/30">
-      <aside className="flex w-56 shrink-0 flex-col border-r bg-background">
-        <div className="flex h-14 items-center justify-between px-4">
-          <span className="text-sm font-semibold tracking-tight">platform</span>
-          <Settings className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
-        </div>
-        <nav className="flex flex-1 flex-col gap-1 px-2 py-2">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              className={[
-                "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-sm transition-colors",
-                item.active
-                  ? "bg-muted font-medium text-foreground"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-              ].join(" ")}
-            >
-              <Sparkles className="h-4 w-4" aria-hidden="true" />
-              {item.label}
-            </button>
-          ))}
-        </nav>
-        <div className="border-t p-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground text-xs font-semibold uppercase text-background">
-              {emailLocal.slice(0, 1) || "·"}
+    <div className="flex min-h-screen bg-muted/40">
+      {/* Mobile top bar — visible below md breakpoint */}
+      <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between border-b bg-background/95 px-4 backdrop-blur md:hidden">
+        <button
+          type="button"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          aria-label="Open navigation"
+          onClick={() => setMobileOpen(true)}
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <span className="text-sm font-semibold tracking-tight">platform</span>
+        <span className="h-9 w-9" aria-hidden="true" />
+      </div>
+
+      {/* Mobile off-canvas */}
+      <div
+        className={cn(
+          "fixed inset-0 z-40 transition-opacity md:hidden",
+          mobileOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
+        )}
+        aria-hidden={!mobileOpen}
+      >
+        <div
+          className="absolute inset-0 bg-black/40 transition-opacity"
+          onClick={() => setMobileOpen(false)}
+        />
+        <aside
+          className={cn(
+            "absolute inset-y-0 left-0 w-64 transform border-r bg-background shadow-popover transition-transform duration-200",
+            mobileOpen ? "translate-x-0" : "-translate-x-full",
+          )}
+        >
+          <SidebarBody
+            collapsed={false}
+            onToggle={undefined}
+            navItems={NAV_ITEMS}
+            email={emailLocal}
+            roleLabel={roleLabel}
+            signingOut={signingOut}
+            onSignOut={onSignOut}
+            onClose={() => setMobileOpen(false)}
+          />
+        </aside>
+      </div>
+
+      {/* Desktop sidebar */}
+      <aside
+        className={cn(
+          "hidden shrink-0 border-r bg-background transition-[width] duration-200 md:flex md:flex-col",
+          collapsed ? "w-[68px]" : "w-60",
+        )}
+        aria-label="Primary navigation"
+      >
+        <SidebarBody
+          collapsed={collapsed}
+          onToggle={toggle}
+          navItems={NAV_ITEMS}
+          email={emailLocal}
+          roleLabel={roleLabel}
+          signingOut={signingOut}
+          onSignOut={onSignOut}
+        />
+      </aside>
+
+      <main className="flex flex-1 flex-col px-4 pt-20 md:px-8 md:py-6">{children}</main>
+    </div>
+  );
+}
+
+interface SidebarBodyProps {
+  collapsed: boolean;
+  onToggle?: () => void;
+  navItems: NavItem[];
+  email: string;
+  roleLabel: string;
+  signingOut: boolean;
+  onSignOut: () => void;
+  onClose?: () => void;
+}
+
+function SidebarBody({
+  collapsed,
+  onToggle,
+  navItems,
+  email,
+  roleLabel,
+  signingOut,
+  onSignOut,
+  onClose,
+}: SidebarBodyProps): JSX.Element {
+  return (
+    <>
+      <div
+        className={cn(
+          "flex h-14 items-center border-b px-3",
+          collapsed ? "justify-center" : "justify-between",
+        )}
+      >
+        {!collapsed ? (
+          <>
+            <span className="text-sm font-semibold tracking-tight">platform</span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                aria-label="Settings"
+                title="Settings"
+              >
+                <Settings className="h-4 w-4" />
+              </button>
+              {onToggle ? (
+                <button
+                  type="button"
+                  onClick={onToggle}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                  aria-label="Collapse sidebar"
+                  aria-expanded={!collapsed}
+                  title="Collapse sidebar"
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </button>
+              ) : null}
+              {onClose ? (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60 md:hidden"
+                  aria-label="Close navigation"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              ) : null}
             </div>
-            <div className="flex flex-1 flex-col">
-              <span className="text-sm font-medium leading-tight">{emailLocal || "—"}</span>
-              <span className="text-xs capitalize text-muted-foreground">
-                {auth?.user.role ?? ""}
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+            aria-label="Expand sidebar"
+            aria-expanded={false}
+            title="Expand sidebar"
+          >
+            <ChevronsRight className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+
+      <nav className="flex flex-1 flex-col gap-1 p-2" aria-label="Sections">
+        {navItems.map((item) => (
+          <button
+            key={item.label}
+            type="button"
+            title={collapsed ? item.label : undefined}
+            aria-label={item.label}
+            className={cn(
+              "group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm transition-all duration-150",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
+              collapsed && "justify-center px-0",
+              item.active
+                ? "bg-accent font-medium text-foreground shadow-soft-1"
+                : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+            )}
+          >
+            {item.icon}
+            {!collapsed ? <span className="truncate">{item.label}</span> : null}
+          </button>
+        ))}
+      </nav>
+
+      <div className={cn("border-t p-3", collapsed && "flex flex-col items-center gap-2 p-2")}>
+        {collapsed ? (
+          <>
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground text-[11px] font-semibold uppercase text-background"
+              aria-hidden="true"
+            >
+              {email.slice(0, 1) || "·"}
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onSignOut}
+              disabled={signingOut}
+              aria-label="Sign out"
+              title="Sign out"
+              className="h-8 w-8"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </>
+        ) : (
+          <div className="flex items-center gap-2.5">
+            <div
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-foreground text-xs font-semibold uppercase text-background"
+              aria-hidden="true"
+            >
+              {email.slice(0, 1) || "·"}
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-sm font-medium leading-tight" title={email}>
+                {email || "—"}
+              </span>
+              <span className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">
+                {roleLabel}
               </span>
             </div>
             <Button
@@ -77,14 +272,13 @@ export function AppShell({ children }: { children: ReactNode }): JSX.Element {
               disabled={signingOut}
               aria-label="Sign out"
               title="Sign out"
+              className="h-8 w-8 shrink-0"
             >
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
-        </div>
-      </aside>
-
-      <main className="flex flex-1 flex-col px-8 py-6">{children}</main>
-    </div>
+        )}
+      </div>
+    </>
   );
 }

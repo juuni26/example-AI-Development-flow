@@ -18,9 +18,13 @@ export async function loginAs(
 ): Promise<void> {
   const { email, password } = CREDENTIALS[role];
   await page.goto("/login");
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
-  await page.getByRole("button", { name: /sign in/i }).click();
+  // Use role-based locators on the form inputs — getByLabel("Email") would
+  // substring-match the "Copy email" aria-labels on the demo-credentials
+  // copy buttons.
+  await page.getByRole("textbox", { name: "Email", exact: true }).fill(email);
+  // <input type="password"> exposes no implicit role, so target it by id.
+  await page.locator("#password").fill(password);
+  await page.locator("form").first().getByRole("button", { name: /^sign in$/i }).click();
   await page.waitForURL("**/services");
   // Wait for the first row of the catalog to render — the page is only
   // really "ready" once data has arrived.

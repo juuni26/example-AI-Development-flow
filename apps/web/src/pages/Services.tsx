@@ -108,11 +108,11 @@ export function ServicesPage(): JSX.Element {
 
   return (
     <AppShell>
-      <header className="mb-6 flex items-center justify-between">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight">Services</h1>
-            <Badge variant="muted" className="gap-1.5">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Services</h1>
+            <Badge variant="muted" className="gap-1.5 text-[11px]">
               <Building2 className="h-3 w-3" />
               Platform-wide
             </Badge>
@@ -125,12 +125,17 @@ export function ServicesPage(): JSX.Element {
         <SummaryCards data={summary.data} isLoading={summary.isLoading} />
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-4 pb-4">
-          <CardTitle className="text-base">Catalog</CardTitle>
+      <Card className="shadow-soft-1">
+        <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border/60 pb-4">
+          <div className="flex flex-col">
+            <CardTitle className="text-base">Catalog</CardTitle>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {total === 0 ? "No services" : `${total} service${total === 1 ? "" : "s"}`}
+            </p>
+          </div>
           {isAdmin ? (
-            <Button size="sm" variant="outline" onClick={openCreate}>
-              <Plus className="mr-1 h-4 w-4" /> Add
+            <Button size="sm" onClick={openCreate} className="shrink-0">
+              <Plus className="h-4 w-4" /> Add
             </Button>
           ) : null}
         </CardHeader>
