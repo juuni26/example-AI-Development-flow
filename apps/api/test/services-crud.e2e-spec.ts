@@ -71,7 +71,7 @@ describe("services CRUD + role gating (e2e)", () => {
     it("PATCH as user returns 403", async () => {
       // Any uuid here — guard runs before we hit the DB.
       await request(ctx.app.getHttpServer())
-        .patch("/services/00000000-0000-0000-0000-000000000000")
+        .patch("/services/00000000-0000-4000-8000-000000000000")
         .set(userHeader())
         .send({ name: "ignored" })
         .expect(403);
@@ -79,7 +79,7 @@ describe("services CRUD + role gating (e2e)", () => {
 
     it("DELETE as user returns 403", async () => {
       await request(ctx.app.getHttpServer())
-        .delete("/services/00000000-0000-0000-0000-000000000000")
+        .delete("/services/00000000-0000-4000-8000-000000000000")
         .set(userHeader())
         .expect(403);
     });
@@ -119,7 +119,7 @@ describe("services CRUD + role gating (e2e)", () => {
       await request(ctx.app.getHttpServer())
         .post("/services")
         .set(adminHeader())
-        .send(validBody({ companyId: "00000000-0000-0000-0000-000000000000" }))
+        .send(validBody({ companyId: "00000000-0000-4000-8000-000000000000" }))
         .expect(404);
     });
   });
@@ -159,7 +159,7 @@ describe("services CRUD + role gating (e2e)", () => {
 
     it("returns 404 for a missing id", async () => {
       await request(ctx.app.getHttpServer())
-        .patch("/services/00000000-0000-0000-0000-000000000000")
+        .patch("/services/00000000-0000-4000-8000-000000000000")
         .set(adminHeader())
         .send({ name: "noop" })
         .expect(404);
@@ -187,7 +187,7 @@ describe("services CRUD + role gating (e2e)", () => {
 
     it("returns 404 when the id does not exist", async () => {
       await request(ctx.app.getHttpServer())
-        .delete("/services/00000000-0000-0000-0000-000000000000")
+        .delete("/services/00000000-0000-4000-8000-000000000000")
         .set(adminHeader())
         .expect(404);
     });

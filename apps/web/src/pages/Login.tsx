@@ -10,6 +10,7 @@ import {
   type LoginResponse,
 } from "@cleandrop/shared";
 import { api } from "@/lib/api";
+import { safeNext } from "@/lib/safe-next";
 import { useAuth } from "@/lib/use-auth";
 import { DemoCredentials } from "@/components/DemoCredentials";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,7 @@ export function LoginPage(): JSX.Element {
   const { auth, setAuth } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const next = searchParams.get("next") ?? "/services";
+  const next = safeNext(searchParams.get("next"));
   const [formError, setFormError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 

@@ -13,7 +13,10 @@ class DbLifecycle implements OnApplicationShutdown {
   constructor(@Inject(SQL_TOKEN) private readonly sql: Sql) {}
 
   async onApplicationShutdown(): Promise<void> {
-    await this.sql.end({ timeout: 5 });
+    // 20s gives in-flight queries enough time to land without forcibly
+    // cutting them on graceful shutdown. In tests + dev the pool is idle so
+    // this still returns essentially instantly.
+    await this.sql.end({ timeout: 20 });
   }
 }
 

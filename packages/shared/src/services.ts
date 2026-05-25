@@ -42,14 +42,20 @@ export type SortDir = z.infer<typeof sortDirSchema>;
 // Write DTOs ----------------------------------------------------------------
 // Reasonable upper bounds so a typo on the client doesn't accept multi-MB
 // payloads; matched to the schema column widths where applicable.
+
+/** Whole day in minutes — caps Service.durationMinutes at 24h. */
+export const MAX_DURATION_MINUTES = 60 * 24;
+/** Cent-units cap. 100M cents = €1M — far above any sane service price. */
+export const MAX_BASE_PRICE_CENTS = 100_000_000;
+
 export const createServiceSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
   description: z.string().trim().min(1, "Description is required").max(2000),
   category: categorySchema,
   companyId: z.string().uuid(),
   status: statusSchema,
-  durationMinutes: z.coerce.number().int().min(1).max(60 * 24),
-  basePriceCents: z.coerce.number().int().min(0).max(100_000_000),
+  durationMinutes: z.coerce.number().int().min(1).max(MAX_DURATION_MINUTES),
+  basePriceCents: z.coerce.number().int().min(0).max(MAX_BASE_PRICE_CENTS),
 });
 export type CreateServiceRequest = z.infer<typeof createServiceSchema>;
 

@@ -5,6 +5,7 @@ import { UsersModule } from "../users/users.module";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { JwtAuthGuard } from "./jwt.guard";
+import { RefreshTokenJanitor } from "./refresh-token-janitor.service";
 import { RefreshTokenService } from "./refresh-token.service";
 import { RolesGuard } from "./roles";
 
@@ -19,7 +20,7 @@ import { RolesGuard } from "./roles";
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard, RefreshTokenService, RolesGuard],
+  providers: [AuthService, JwtAuthGuard, RefreshTokenService, RefreshTokenJanitor, RolesGuard],
   exports: [AuthService, JwtAuthGuard, RolesGuard, JwtModule],
 })
 export class AuthModule {}

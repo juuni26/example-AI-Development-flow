@@ -79,8 +79,7 @@ export function ServicesPage(): JSX.Element {
   const debouncedDraft = useDebounce(draft, 250);
   useEffect(() => {
     if (debouncedDraft !== searchInput) setSearch(debouncedDraft);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedDraft]);
+  }, [debouncedDraft, searchInput, setSearch]);
 
   // The query uses the URL-bound query directly so the debounced search has
   // already been written to the URL before the request fires.

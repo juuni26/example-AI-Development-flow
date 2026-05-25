@@ -150,10 +150,19 @@ export class ServicesService {
       }
     }
 
+    // Explicit destructure rather than `...input` so a future schema loosening
+    // (e.g. .passthrough()) cannot smuggle unknown columns into the UPDATE.
+    // Drizzle drops `undefined` properties from the SET clause automatically.
     const [row] = await this.db
       .update(services)
       .set({
-        ...input,
+        name: input.name,
+        description: input.description,
+        category: input.category,
+        companyId: input.companyId,
+        status: input.status,
+        durationMinutes: input.durationMinutes,
+        basePriceCents: input.basePriceCents,
         updatedAt: sql`now()`,
       })
       .where(eq(services.id, id))

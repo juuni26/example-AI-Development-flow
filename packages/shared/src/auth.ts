@@ -11,7 +11,14 @@ export const userSchema = z.object({
 export type User = z.infer<typeof userSchema>;
 
 export const loginRequestSchema = z.object({
-  email: z.string().email("Enter a valid email address"),
+  // Lowercased at the boundary so the API and any future signup path agree on
+  // case-insensitive identity without having to remember to normalise per
+  // call site. trim() guards against trailing whitespace from copy-paste.
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .pipe(z.string().email("Enter a valid email address")),
   password: z.string().min(1, "Password is required"),
 });
 export type LoginRequest = z.infer<typeof loginRequestSchema>;

@@ -15,7 +15,6 @@ export default defineConfig({
     baseURL: WEB_URL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
-    extraHTTPHeaders: { "X-E2E-Source": "playwright" },
   },
   projects: [
     {

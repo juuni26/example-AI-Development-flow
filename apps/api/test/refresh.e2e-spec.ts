@@ -99,6 +99,37 @@ describe("refresh + logout (e2e)", () => {
       .expect(401);
   });
 
+  it("concurrent refreshes with the same token: exactly one succeeds, the other 401s + cascades", async () => {
+    // Race-safety check. Without the atomic claim, both calls could:
+    //   - both read revokedAt = null
+    //   - both proceed to revoke + issue
+    //   - both return new pairs, leaving two live chains from a single token
+    // With the atomic UPDATE … RETURNING, exactly one wins; the loser sees
+    // `already_revoked`, fires the cascade, and gets 401.
+
+    const { refreshToken } = await login();
+
+    const [a, b] = await Promise.all([
+      request(ctx.app.getHttpServer())
+        .post("/auth/refresh")
+        .send({ refreshToken }),
+      request(ctx.app.getHttpServer())
+        .post("/auth/refresh")
+        .send({ refreshToken }),
+    ]);
+
+    const statuses = [a.status, b.status].sort();
+    expect(statuses).toEqual([200, 401]);
+
+    // Whichever new refresh token came back is now also dead — the loser's
+    // cascade revokeAllForUser killed it.
+    const winner = (a.status === 200 ? a : b).body.refreshToken as string;
+    await request(ctx.app.getHttpServer())
+      .post("/auth/refresh")
+      .send({ refreshToken: winner })
+      .expect(401);
+  });
+
   it("refresh with a malformed body returns 400", async () => {
     await request(ctx.app.getHttpServer())
       .post("/auth/refresh")

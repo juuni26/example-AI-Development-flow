@@ -7,7 +7,6 @@ import {
 import { JwtService } from "@nestjs/jwt";
 import type { Request } from "express";
 import { accessTokenPayloadSchema, type AccessTokenPayload } from "@cleandrop/shared";
-import { loadEnv } from "../config/env";
 
 export interface AuthedRequest extends Request {
   user: AccessTokenPayload;
@@ -26,10 +25,13 @@ export class JwtAuthGuard implements CanActivate {
     }
     const token = match[1];
 
-    const env = loadEnv();
+    // JwtModule was configured with the secret at module load — no need to
+    // re-read env here. The explicit `algorithms` list defends against
+    // accidental `alg: none` acceptance and algorithm-confusion attacks if a
+    // future dependency upgrade ever loosens the default.
     let raw: unknown;
     try {
-      raw = await this.jwt.verifyAsync(token, { secret: env.JWT_SECRET });
+      raw = await this.jwt.verifyAsync(token, { algorithms: ["HS256"] });
     } catch {
       throw new UnauthorizedException("Invalid or expired token");
     }

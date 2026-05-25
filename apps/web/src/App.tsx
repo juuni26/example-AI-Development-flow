@@ -3,9 +3,11 @@ import { useEffect } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { LoginPage } from "@/pages/Login";
+import { NotFoundPage } from "@/pages/NotFound";
 import { ServicesPage } from "@/pages/Services";
 import { RequireAuth } from "@/routes/RequireAuth";
 import { onSessionExpired } from "@/lib/api";
+import { safeNext } from "@/lib/safe-next";
 
 export function App(): JSX.Element {
   const navigate = useNavigate();
@@ -15,12 +17,10 @@ export function App(): JSX.Element {
   useEffect(() => {
     return onSessionExpired(() => {
       const path = window.location.pathname;
-      // Don't toast or set ?next= if the user is already on /login (e.g. they
-      // failed to log in — that error is handled by the form, not here).
       if (path === "/login") return;
-      const next = encodeURIComponent(path + window.location.search);
+      const safe = safeNext(path + window.location.search, "/services");
       toast.error("Session expired. Please sign in again.");
-      navigate(`/login?next=${next}`, { replace: true });
+      navigate(`/login?next=${encodeURIComponent(safe)}`, { replace: true });
     });
   }, [navigate]);
 
@@ -36,7 +36,7 @@ export function App(): JSX.Element {
           </RequireAuth>
         }
       />
-      <Route path="*" element={<Navigate to="/services" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }

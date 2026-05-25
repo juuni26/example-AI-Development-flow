@@ -14,6 +14,24 @@ export interface IssuedRefresh {
   rowId: string;
 }
 
+/**
+ * Outcome of `claimForRotation`. Encodes the three possible states the
+ * rotation needs to react to atomically:
+ *
+ * - `claimed`: this caller won the race, the row is now revoked, the
+ *   caller may safely issue a new pair linked back to `rowId`.
+ * - `not_found`: no row matches the presented token (unknown / replayed
+ *   after deletion). Caller should 401, no cascade.
+ * - `already_revoked`: row exists but was already revoked by someone
+ *   else. Either a reuse attack or a race we lost — caller should
+ *   trigger the reuse-detection cascade (revoke all rows for `userId`)
+ *   and 401.
+ */
+export type ClaimResult =
+  | { kind: "claimed"; rowId: string; userId: string; expiresAt: Date }
+  | { kind: "not_found" }
+  | { kind: "already_revoked"; userId: string };
+
 @Injectable()
 export class RefreshTokenService {
   constructor(@Inject(DB_TOKEN) private readonly db: Db) {}
@@ -36,8 +54,52 @@ export class RefreshTokenService {
   }
 
   /**
+   * Atomically attempts to claim a refresh token for rotation. Uses a single
+   * SQL statement (`UPDATE … WHERE token_hash = $1 AND revoked_at IS NULL
+   * RETURNING …`) so concurrent refreshes presenting the same token
+   * deterministically resolve to one winner — exactly one row is updated,
+   * losers see `already_revoked`.
+   *
+   * This is the foundation of the race-safe rotation in {@link AuthService.refreshTokens}.
+   */
+  async claimForRotation(plaintext: string): Promise<ClaimResult> {
+    const tokenHash = this.hash(plaintext);
+
+    // Step 1 — atomic claim.
+    const claimed = await this.db
+      .update(refreshTokens)
+      .set({ revokedAt: sql`now()` })
+      .where(and(eq(refreshTokens.tokenHash, tokenHash), isNull(refreshTokens.revokedAt)))
+      .returning({
+        id: refreshTokens.id,
+        userId: refreshTokens.userId,
+        expiresAt: refreshTokens.expiresAt,
+      });
+
+    if (claimed.length === 1) {
+      return {
+        kind: "claimed",
+        rowId: claimed[0].id,
+        userId: claimed[0].userId,
+        expiresAt: claimed[0].expiresAt,
+      };
+    }
+
+    // Step 2 — figure out why we got 0 rows.
+    const existing = await this.db
+      .select({ userId: refreshTokens.userId, revokedAt: refreshTokens.revokedAt })
+      .from(refreshTokens)
+      .where(eq(refreshTokens.tokenHash, tokenHash))
+      .limit(1);
+
+    if (existing.length === 0) return { kind: "not_found" };
+    return { kind: "already_revoked", userId: existing[0].userId };
+  }
+
+  /**
    * Finds a refresh-token row by plaintext (we only ever store hashes).
-   * Returns undefined when no row matches the hash.
+   * Returns undefined when no row matches the hash. Used by the logout
+   * path where we don't need the atomicity guarantees of claimForRotation.
    */
   async findByPlaintext(plaintext: string): Promise<RefreshTokenRow | undefined> {
     const tokenHash = this.hash(plaintext);
@@ -70,7 +132,30 @@ export class RefreshTokenService {
       .where(and(eq(refreshTokens.userId, userId), isNull(refreshTokens.revokedAt)));
   }
 
-  private hash(plaintext: string): string {
+  /**
+   * Garbage-collects expired and long-revoked refresh tokens. Safe to run
+   * repeatedly; idempotent. Returns the row count for observability.
+   *
+   * Keeps recently-revoked rows for 30 days so reuse detection can still see
+   * the `replaced_by_id` chain. Expired rows are deleted immediately since
+   * they can no longer participate in rotation.
+   */
+  async cleanup(): Promise<{ deleted: number }> {
+    const result = await this.db.execute<{ count: number }>(
+      sql`
+        with deleted as (
+          delete from refresh_tokens
+          where expires_at < now()
+             or (revoked_at is not null and revoked_at < now() - interval '30 days')
+          returning id
+        )
+        select count(*)::int as count from deleted
+      `,
+    );
+    return { deleted: result[0]?.count ?? 0 };
+  }
+
+  hash(plaintext: string): string {
     return crypto.createHash("sha256").update(plaintext).digest("hex");
   }
 }

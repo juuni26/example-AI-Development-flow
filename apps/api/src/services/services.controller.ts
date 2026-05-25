@@ -47,7 +47,7 @@ export class ServicesController {
 
   @Get(":id")
   @ApiOperation({ summary: "Fetch a single service by id" })
-  async findOne(@Param("id", new ParseUUIDPipe()) id: string): Promise<Service> {
+  async findOne(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string): Promise<Service> {
     const found = await this.services.findById(id);
     if (!found) throw new NotFoundException(`Service ${id} not found`);
     return found;
@@ -71,7 +71,7 @@ export class ServicesController {
   @Patch(":id")
   @ApiOperation({ summary: "Update a service (admin only)" })
   async update(
-    @Param("id", new ParseUUIDPipe()) id: string,
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
     @Body() body: UpdateServiceDto,
   ): Promise<Service> {
     return this.services.update(id, body);
@@ -81,7 +81,7 @@ export class ServicesController {
   @Delete(":id")
   @HttpCode(204)
   @ApiOperation({ summary: "Delete a service (admin only)" })
-  async remove(@Param("id", new ParseUUIDPipe()) id: string): Promise<void> {
+  async remove(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string): Promise<void> {
     await this.services.remove(id);
   }
 }

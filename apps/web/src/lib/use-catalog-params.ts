@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   categorySchema,
@@ -41,8 +41,24 @@ export function useCatalogParams(): {
   const category = parseEnum(categorySchema, params.get("category")) ?? "all";
   const sortBy = parseEnum(sortableColumnSchema, params.get("sortBy"));
   const sortDir = parseEnum(sortDirSchema, params.get("sortDir"));
-  const page = clampInt(params.get("page"), 1, 1, 10_000);
-  const pageSize = clampInt(params.get("pageSize"), 6, 1, 100);
+  const rawPage = params.get("page");
+  const rawPageSize = params.get("pageSize");
+  const page = clampInt(rawPage, 1, 1, 10_000);
+  const pageSize = clampInt(rawPageSize, 6, 1, 100);
+
+  // If a clamp fired, normalise the URL back so a refresh or copy-paste of
+  // the address bar reflects the actual rendered state.
+  useEffect(() => {
+    if (rawPage !== null && rawPage !== String(page)) {
+      const next = new URLSearchParams(params);
+      next.set("page", String(page));
+      setParams(next, { replace: true });
+    } else if (rawPageSize !== null && rawPageSize !== String(pageSize)) {
+      const next = new URLSearchParams(params);
+      next.set("pageSize", String(pageSize));
+      setParams(next, { replace: true });
+    }
+  }, [rawPage, rawPageSize, page, pageSize, params, setParams]);
 
   const query = useMemo<ListServicesQuery>(
     () =>

@@ -18,8 +18,10 @@
         "@nestjs/jwt": "10.2.0",
         "@nestjs/platform-express": "10.4.1",
         "@nestjs/swagger": "7.4.0",
+        "@nestjs/throttler": "6.2.1",
         "bcryptjs": "2.4.3",
         "drizzle-orm": "0.33.0",
+        "helmet": "7.1.0",
         "nestjs-zod": "3.0.0",
         "postgres": "3.4.4",
         "reflect-metadata": "0.2.2",
@@ -325,6 +327,8 @@
     "@nestjs/swagger": ["@nestjs/swagger@7.4.0", "", { "dependencies": { "@microsoft/tsdoc": "^0.15.0", "@nestjs/mapped-types": "2.0.5", "js-yaml": "4.1.0", "lodash": "4.17.21", "path-to-regexp": "3.2.0", "swagger-ui-dist": "5.17.14" }, "peerDependencies": { "@fastify/static": "^6.0.0 || ^7.0.0", "@nestjs/common": "^9.0.0 || ^10.0.0", "@nestjs/core": "^9.0.0 || ^10.0.0", "class-transformer": "*", "class-validator": "*", "reflect-metadata": "^0.1.12 || ^0.2.0" }, "optionalPeers": ["@fastify/static", "class-transformer", "class-validator"] }, "sha512-dCiwKkRxcR7dZs5jtrGspBAe/nqJd1AYzOBTzw9iCdbq3BGrLpwokelk6lFZPe4twpTsPQqzNKBwKzVbI6AR/g=="],
 
     "@nestjs/testing": ["@nestjs/testing@10.4.1", "", { "dependencies": { "tslib": "2.6.3" }, "peerDependencies": { "@nestjs/common": "^10.0.0", "@nestjs/core": "^10.0.0", "@nestjs/microservices": "^10.0.0", "@nestjs/platform-express": "^10.0.0" }, "optionalPeers": ["@nestjs/microservices", "@nestjs/platform-express"] }, "sha512-pR+su5+YGqCLH0RhhVkPowQK7FCORU0/PWAywPK7LScAOtD67ZoviZ7hAU4vnGdwkg4HCB0D7W8Bkg19CGU8Xw=="],
+
+    "@nestjs/throttler": ["@nestjs/throttler@6.2.1", "", { "peerDependencies": { "@nestjs/common": "^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0", "@nestjs/core": "^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0", "reflect-metadata": "^0.1.13 || ^0.2.0" } }, "sha512-vdt6VjhKC6vcLBJRUb97IuR6Htykn5kokZzmT8+S5XFOLLjUF7rzRpr+nUOhK9pi1L0hhbzSf2v2FJl4v64EJA=="],
 
     "@noble/hashes": ["@noble/hashes@1.8.0", "", {}, "sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A=="],
 
@@ -1039,6 +1043,8 @@
     "has-tostringtag": ["has-tostringtag@1.0.2", "", { "dependencies": { "has-symbols": "^1.0.3" } }, "sha512-NqADB8VjPFLM2V0VvHUewwwsw0ZWBaIdgo+ieHtK3hasLz4qeCRjYcqfB6AQrBggRKppKF8L52/VqdVsO47Dlw=="],
 
     "hasown": ["hasown@2.0.3", "", { "dependencies": { "function-bind": "^1.1.2" } }, "sha512-ej4AhfhfL2Q2zpMmLo7U1Uv9+PyhIZpgQLGT1F9miIGmiCJIoCgSmczFdrc97mWT4kVY72KA+WnnhJ5pghSvSg=="],
+
+    "helmet": ["helmet@7.1.0", "", {}, "sha512-g+HZqgfbpXdCkme/Cd/mZkV0aV3BZZZSugecH03kl38m/Kmdx8jKjBikpDj2cr+Iynv4KpYEviojNdTJActJAg=="],
 
     "html-escaper": ["html-escaper@2.0.2", "", {}, "sha512-H2iMtd0I4Mt5eYiapRdIDjp+XzelXQ0tFE4JS7YFwFevXXMmOp9myNrUvCg0D6ws8iqkRPBfKHgbwig1SmlLfg=="],
 

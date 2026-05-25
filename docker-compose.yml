@@ -46,10 +46,16 @@ services:
       dockerfile: apps/api/Dockerfile
       target: runtime
     environment:
-      NODE_ENV: production
+      # Default to production so unconfigured deploys are safe. Set
+      # NODE_ENV=development in .env to permit the documented dev defaults
+      # (placeholder JWT_SECRET, etc.).
+      NODE_ENV: ${NODE_ENV:-production}
       API_PORT: 3000
       DATABASE_URL: postgres://${POSTGRES_USER:-cleandrop}:${POSTGRES_PASSWORD:-cleandrop}@db:5432/${POSTGRES_DB:-cleandrop}
-      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-this-is-a-dev-secret-not-for-real-use}
+      # No default — production deploys must set JWT_SECRET. Env validator
+      # refuses to boot if it's missing or matches a known dev default.
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required (copy .env.example to .env)}
+      WEB_ORIGINS: ${WEB_ORIGINS:-http://localhost:8080,http://localhost:5173}
     ports:
       - "${API_HOST_PORT:-3000}:3000"
     depends_on:

@@ -42,7 +42,12 @@ export const refreshTokens = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
+    // Fast lookup for revoke-all-for-user (reuse detection cascade) and for
+    // counting a user's active sessions.
     userIdx: index("refresh_tokens_user_revoked_idx").on(t.userId, t.revokedAt),
+    // Supports the janitor's `expires_at < now()` predicate without scanning
+    // the whole table.
+    expiresIdx: index("refresh_tokens_expires_at_idx").on(t.expiresAt),
   }),
 );
 

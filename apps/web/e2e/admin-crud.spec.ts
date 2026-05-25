@@ -116,7 +116,7 @@ test.describe("role enforcement at the API (UI bypass)", () => {
           name: "should-not-create",
           description: "x",
           category: "Residential",
-          companyId: "00000000-0000-0000-0000-000000000000",
+          companyId: "00000000-0000-4000-8000-000000000000",
           status: "Active",
           durationMinutes: 60,
           basePriceCents: 1000,
