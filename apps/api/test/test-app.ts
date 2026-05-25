@@ -26,12 +26,30 @@ export interface TestApp {
  * fixture (users + companies + services), and boots a Nest application
  * against that database. Caller is responsible for invoking `cleanup`.
  */
+async function startContainerWithRetry(
+  attempts = 3,
+): Promise<StartedPostgreSqlContainer> {
+  let lastError: unknown;
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      return await new PostgreSqlContainer("postgres:16-alpine")
+        .withDatabase("cleandrop")
+        .withUsername("cleandrop")
+        .withPassword("cleandrop")
+        .start();
+    } catch (err) {
+      lastError = err;
+      // Docker Desktop on macOS occasionally fails the first bind on a freshly
+      // started container. Brief backoff and retry rather than failing the
+      // whole suite for a transient infra issue.
+      await new Promise((r) => setTimeout(r, 500 * i));
+    }
+  }
+  throw lastError;
+}
+
 export async function startTestApp(): Promise<TestApp> {
-  const container = await new PostgreSqlContainer("postgres:16-alpine")
-    .withDatabase("cleandrop")
-    .withUsername("cleandrop")
-    .withPassword("cleandrop")
-    .start();
+  const container = await startContainerWithRetry();
 
   const url = container.getConnectionUri();
   process.env.DATABASE_URL = url;

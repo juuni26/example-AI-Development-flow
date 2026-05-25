@@ -4,6 +4,7 @@ import type {
   ListServicesQuery,
   PaginatedServices,
   Service,
+  ServicesSummary,
   SortableColumn,
   SortDir,
 } from "@cleandrop/shared";
@@ -67,6 +68,30 @@ export class ServicesService {
       total: totalRows[0]?.count ?? 0,
       page: query.page,
       pageSize: query.pageSize,
+    };
+  }
+
+  /**
+   * Single round-trip aggregate over the services table. AVG returns NULL
+   * when there are no rows; we surface that as `null` for the card to render
+   * an em-dash instead of "EUR 0".
+   */
+  async summary(): Promise<ServicesSummary> {
+    const [row] = await this.db
+      .select({
+        total: sql<number>`count(*)::int`,
+        active: sql<number>`count(*) filter (where ${services.status} = 'Active')::int`,
+        drafts: sql<number>`count(*) filter (where ${services.status} = 'Draft')::int`,
+        // AVG returns numeric; round to integer cents. NULL stays NULL.
+        avgBasePriceCents: sql<number | null>`(avg(${services.basePriceCents}))::int`,
+      })
+      .from(services);
+
+    return {
+      total: row?.total ?? 0,
+      active: row?.active ?? 0,
+      drafts: row?.drafts ?? 0,
+      avgBasePriceCents: row?.avgBasePriceCents ?? null,
     };
   }
 
