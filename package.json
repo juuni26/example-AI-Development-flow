@@ -8,15 +8,21 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "concurrently --kill-others-on-fail --names api,web --prefix-colors blue,magenta \"bun --filter @cleandrop/api dev\" \"bun --filter @cleandrop/web dev\"",
     "dev:api": "bun --filter @cleandrop/api dev",
     "dev:web": "bun --filter @cleandrop/web dev",
+    "dev:db": "docker compose up -d db",
+    "dev:setup": "docker compose up -d db && bun --filter @cleandrop/api db:migrate && bun --filter @cleandrop/api db:seed",
     "build": "bun --filter '*' build",
-    "test:api": "bun --filter @cleandrop/api test"
+    "test:api": "bun --filter @cleandrop/api test",
+    "test:e2e:api": "bun --filter @cleandrop/api test:e2e",
+    "test:e2e:web": "bun --filter @cleandrop/web test:e2e"
   },
   "engines": {
     "bun": ">=1.1.0"
   },
   "devDependencies": {
+    "concurrently": "9.0.1",
     "typescript": "5.5.4"
   }
 }

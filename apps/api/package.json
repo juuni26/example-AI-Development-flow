@@ -4,13 +4,13 @@
   "private": true,
   "scripts": {
     "build": "nest build",
-    "dev": "nest start --watch",
+    "dev": "bun --env-file=../../.env --env-file=../../.env.local --watch run src/main.ts",
     "start": "bun run dist/main.js",
     "test": "jest",
     "test:e2e": "jest --config jest-e2e.config.ts --runInBand",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "bun run src/db/migrate.ts",
-    "db:seed": "bun run src/db/seed.ts",
+    "db:migrate": "bun --env-file=../../.env --env-file=../../.env.local run src/db/migrate.ts",
+    "db:seed": "bun --env-file=../../.env --env-file=../../.env.local run src/db/seed.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
