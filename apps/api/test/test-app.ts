@@ -5,31 +5,26 @@ import { PostgreSqlContainer, type StartedPostgreSqlContainer } from "@testconta
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
-import bcrypt from "bcryptjs";
-import { sql as drizzleSql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { AppModule } from "../src/app.module";
-import { users } from "../src/db/schema";
+import { applySeed, SEED_SERVICES, SEED_USERS } from "../src/db/fixtures";
 
 export interface TestApp {
   app: INestApplication;
   container: StartedPostgreSqlContainer;
   cleanup: () => Promise<void>;
-  /** Plaintext credentials of seeded users — these are what callers POST to /auth/login. */
+  /** Plaintext credentials of seeded users — what callers POST to /auth/login. */
   fixtures: {
     admin: { id: string; email: string; password: string };
     user: { id: string; email: string; password: string };
+    serviceCount: number;
   };
 }
 
-const SEED = {
-  admin: { email: "admin@cleandrop.test", password: "admin123", role: "admin" as const },
-  user: { email: "user@cleandrop.test", password: "user123", role: "user" as const },
-};
-
 /**
- * Starts a fresh Postgres container, applies all migrations, seeds two users,
- * and boots a Nest application against that database. Caller is responsible
- * for invoking `cleanup` (closes the app and stops the container).
+ * Starts a fresh Postgres container, applies all migrations, seeds the full
+ * fixture (users + companies + services), and boots a Nest application
+ * against that database. Caller is responsible for invoking `cleanup`.
  */
 export async function startTestApp(): Promise<TestApp> {
   const container = await new PostgreSqlContainer("postgres:16-alpine")
@@ -43,7 +38,6 @@ export async function startTestApp(): Promise<TestApp> {
   process.env.JWT_SECRET = "e2e-test-secret-key-needs-to-be-long-enough";
   process.env.ACCESS_TOKEN_TTL = "15m";
 
-  // Apply migrations against the fresh container.
   const migrationClient = postgres(url, { max: 1 });
   try {
     await migrate(drizzle(migrationClient), {
@@ -53,23 +47,19 @@ export async function startTestApp(): Promise<TestApp> {
     await migrationClient.end({ timeout: 5 });
   }
 
-  // Seed two users.
+  // Cheap bcrypt cost in tests; we are not benchmarking hashes.
   const seedClient = postgres(url, { max: 1 });
   const seedDb = drizzle(seedClient);
-  const adminHash = await bcrypt.hash(SEED.admin.password, 4);
-  const userHash = await bcrypt.hash(SEED.user.password, 4);
-  await seedDb.insert(users).values([
-    { email: SEED.admin.email, passwordHash: adminHash, role: SEED.admin.role },
-    { email: SEED.user.email, passwordHash: userHash, role: SEED.user.role },
-  ]);
-  const seededRows = await seedDb.execute<{ id: string; email: string }>(
-    drizzleSql`select id::text as id, email from users order by email`,
+  await applySeed(seedDb, 4);
+
+  const seededUsers = await seedDb.execute<{ id: string; email: string }>(
+    sql`select id::text as id, email from users order by email`,
   );
   await seedClient.end({ timeout: 5 });
 
-  const adminRow = seededRows.find((r) => r.email === SEED.admin.email);
-  const userRow = seededRows.find((r) => r.email === SEED.user.email);
-  if (!adminRow || !userRow) throw new Error("seed failed: expected rows not found");
+  const adminRow = seededUsers.find((r) => r.email === SEED_USERS[0].email);
+  const userRow = seededUsers.find((r) => r.email === SEED_USERS[1].email);
+  if (!adminRow || !userRow) throw new Error("seed failed: expected users not found");
 
   const moduleRef: TestingModule = await Test.createTestingModule({
     imports: [AppModule],
@@ -83,8 +73,9 @@ export async function startTestApp(): Promise<TestApp> {
     app,
     container,
     fixtures: {
-      admin: { id: adminRow.id, email: SEED.admin.email, password: SEED.admin.password },
-      user: { id: userRow.id, email: SEED.user.email, password: SEED.user.password },
+      admin: { id: adminRow.id, email: SEED_USERS[0].email, password: SEED_USERS[0].password },
+      user: { id: userRow.id, email: SEED_USERS[1].email, password: SEED_USERS[1].password },
+      serviceCount: SEED_SERVICES.length,
     },
     async cleanup() {
       await app.close();
