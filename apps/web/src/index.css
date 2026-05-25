@@ -2,33 +2,138 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------------------------------------------------
+ * Design tokens
+ *
+ * Refined neutral palette tuned for the catalog. The "popover" tokens were
+ * previously missing — that was the root cause of the Radix Select panel
+ * rendering transparent and the underlying form rows bleeding through. We
+ * also separate "subtle" tones for badge backgrounds so contrast holds at
+ * small sizes.
+ * --------------------------------------------------------------------------*/
+
 @layer base {
   :root {
+    /* Page surfaces */
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
+
+    /* Cards */
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
+
+    /* Popovers / Dropdowns / Sheets / Dialogs — opaque, slightly elevated */
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    /* Primary action (buttons, focus rings) */
+    --primary: 240 8% 12%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+
+    /* Secondary surface for hover bg, badges */
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 8% 12%;
+
+    /* Muted (subtitles, metadata) */
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
+
+    /* Accent (sidebar active item, subtle highlights) */
+    --accent: 240 5% 94%;
+    --accent-foreground: 240 8% 12%;
+
+    /* Destructive (delete, errors) */
+    --destructive: 0 72% 45%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
+
+    /* Borders + inputs share a single soft neutral */
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+
+    /* Focus ring — slightly warmer than primary so it reads as interactive */
+    --ring: 240 8% 24%;
+
+    /* Status palette — each pair is bg / fg, tuned for AA contrast on small text */
+    --status-active-bg: 142 60% 92%;
+    --status-active-fg: 142 55% 22%;
+    --status-draft-bg: 38 92% 92%;
+    --status-draft-fg: 28 72% 28%;
+    --status-inactive-bg: 240 5% 92%;
+    --status-inactive-fg: 240 5% 32%;
+
     --radius: 0.625rem;
   }
 
+  /* Reset + global behaviors */
   * {
     @apply border-border;
   }
+  *,
+  *::before,
+  *::after {
+    -webkit-tap-highlight-color: transparent;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
   body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+  }
+
+  /* Every native button defaults to a pointer. shadcn buttons set this on
+   * their own classes, but bare <button>s (icon triggers, sortable headers)
+   * need the global rule. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="menuitem"]:not([aria-disabled="true"]),
+  [role="option"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  /* Visible focus ring on keyboard navigation, suppressed for mouse clicks
+   * via :focus-visible. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring) / 0.6);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Numerics in the catalog table read better with tabular figures. */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Make scrollable areas feel less abrupt. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 8px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.4);
+  }
+
+  /* Honor users that prefer less motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* Local utilities used in a couple of components. */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
   }
 }

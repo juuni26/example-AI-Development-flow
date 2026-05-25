@@ -10,9 +10,11 @@ test.describe("authentication flow", () => {
   test("admin logs in and lands on /services", async ({ page }) => {
     await loginAs(page, "admin");
     await expect(page).toHaveURL(/\/services/);
-    // Sidebar footer shows the email local-part. Exact match disambiguates
-    // from the role badge that also reads "admin".
-    await expect(page.locator("aside").getByText("admin", { exact: true }).first()).toBeVisible();
+    // The desktop sidebar shows the email local-part + a role label. Target
+    // by aria-label since there's also a hidden mobile off-canvas <aside>.
+    const sidebar = page.getByRole("complementary", { name: "Primary navigation" });
+    await expect(sidebar.getByText("admin", { exact: true })).toBeVisible();
+    await expect(sidebar.getByText("Administrator", { exact: true })).toBeVisible();
   });
 
   test("user logs in and lands on /services", async ({ page }) => {
@@ -24,9 +26,9 @@ test.describe("authentication flow", () => {
     page,
   }) => {
     await page.goto("/login");
-    await page.getByLabel("Email").fill(CREDENTIALS.admin.email);
-    await page.getByLabel("Password").fill("definitely-wrong");
-    await page.getByRole("button", { name: /sign in/i }).click();
+    await page.getByRole("textbox", { name: "Email", exact: true }).fill(CREDENTIALS.admin.email);
+    await page.locator("#password").fill("definitely-wrong");
+    await page.locator("form").first().getByRole("button", { name: /^sign in$/i }).click();
 
     const alert = page.getByRole("alert");
     await expect(alert).toBeVisible();
