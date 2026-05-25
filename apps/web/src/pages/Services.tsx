@@ -133,7 +133,7 @@ export function ServicesPage(): JSX.Element {
             </p>
           </div>
           {isAdmin ? (
-            <Button size="sm" onClick={openCreate} className="shrink-0">
+            <Button size="sm" variant="outline" onClick={openCreate} className="shrink-0">
               <Plus className="h-4 w-4" /> Add
             </Button>
           ) : null}

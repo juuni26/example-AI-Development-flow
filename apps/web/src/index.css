@@ -53,13 +53,16 @@
     /* Focus ring — slightly warmer than primary so it reads as interactive */
     --ring: 240 8% 24%;
 
-    /* Status palette — each pair is bg / fg, tuned for AA contrast on small text */
-    --status-active-bg: 142 60% 92%;
-    --status-active-fg: 142 55% 22%;
-    --status-draft-bg: 38 92% 92%;
-    --status-draft-fg: 28 72% 28%;
-    --status-inactive-bg: 240 5% 92%;
-    --status-inactive-fg: 240 5% 32%;
+    /* Status palette — each pair is bg / fg, tuned for AA contrast on small text
+     * and matched to the design preview. Active reads as the prominent state
+     * (saturated mint), Draft as the in-progress amber, Inactive as the
+     * neutral / archived slate. */
+    --status-active-bg: 152 56% 85%;
+    --status-active-fg: 156 60% 22%;
+    --status-draft-bg: 36 80% 88%;
+    --status-draft-fg: 26 70% 30%;
+    --status-inactive-bg: 220 13% 91%;
+    --status-inactive-fg: 220 9% 35%;
 
     --radius: 0.625rem;
   }

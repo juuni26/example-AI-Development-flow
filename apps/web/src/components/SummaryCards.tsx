@@ -38,7 +38,7 @@ function SummaryCard({ label, value, subline, icon }: CardSpec): JSX.Element {
             {icon}
           </span>
         </div>
-        <div className="text-3xl font-semibold tracking-tight">{value}</div>
+        <div className="text-[28px] font-semibold leading-none tracking-tight tabular-nums">{value}</div>
         <div className="text-xs text-muted-foreground">{subline}</div>
       </CardContent>
     </Card>
