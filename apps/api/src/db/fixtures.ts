@@ -131,7 +131,10 @@ export async function applySeed(db: Db, bcryptCost = 10): Promise<SeedCounts> {
   }
 
   for (const c of SEED_COMPANIES) {
-    await db.insert(companies).values({ name: c.name }).onConflictDoNothing({ target: companies.name });
+    await db
+      .insert(companies)
+      .values({ name: c.name })
+      .onConflictDoNothing({ target: companies.name });
   }
 
   const companyRows = await db.select().from(companies);

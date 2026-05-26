@@ -26,7 +26,8 @@ const SERVICE_EXAMPLE = {
 export const examples = {
   login: {
     success: {
-      accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0ZjBkLi4uIiwiZW1haWwiOiJhZG1pbkBjbGVhbmRyb3AudGVzdCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTcxNjY0MDAwMCwiZXhwIjoxNzE2NjQwOTAwfQ.6kQ7mY...",
+      accessToken:
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0ZjBkLi4uIiwiZW1haWwiOiJhZG1pbkBjbGVhbmRyb3AudGVzdCIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTcxNjY0MDAwMCwiZXhwIjoxNzE2NjQwOTAwfQ.6kQ7mY...",
       refreshToken: "k7G2yQ8sNvR4dXcZbA9PtMfL3eHqUjVwYxBn1iOoEa0",
       user: {
         id: "4f0d8c2a-1234-4abc-9def-0123456789ab",

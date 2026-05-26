@@ -7,7 +7,7 @@
 
 Access JWTs are short-lived (15 min) and stored in `localStorage` to avoid the cookie/CORS complexity of a Docker compose setup where the browser-facing and container-internal hostnames differ. Refresh tokens were promoted from "nice to have" to required scope (see [[project-scope-nice-to-haves]]).
 
-That leaves the question of *where* the refresh token lives and whether it rotates. Three options:
+That leaves the question of _where_ the refresh token lives and whether it rotates. Three options:
 
 1. **Refresh in localStorage, no rotation.** Simple, but a 7-day refresh token next to the access token has the same XSS exposure for the same window — most of the security improvement evaporates.
 2. **Refresh in httpOnly + Secure + SameSite cookie.** Principled, but introduces CORS-with-credentials, requires an explicit origin allowlist, and cookie-domain configuration that's brittle across `docker compose` networking modes.

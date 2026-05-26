@@ -4,11 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, LogIn, Sparkles } from "lucide-react";
-import {
-  loginRequestSchema,
-  type LoginRequest,
-  type LoginResponse,
-} from "@cleandrop/shared";
+import { loginRequestSchema, type LoginRequest, type LoginResponse } from "@cleandrop/shared";
 import { api } from "@/lib/api";
 import { safeNext } from "@/lib/safe-next";
 import { useAuth } from "@/lib/use-auth";

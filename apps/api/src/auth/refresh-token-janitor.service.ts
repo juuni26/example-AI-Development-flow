@@ -1,4 +1,9 @@
-import { Injectable, Logger, type OnApplicationBootstrap, type OnApplicationShutdown } from "@nestjs/common";
+import {
+  Injectable,
+  Logger,
+  type OnApplicationBootstrap,
+  type OnApplicationShutdown,
+} from "@nestjs/common";
 import { RefreshTokenService } from "./refresh-token.service";
 
 const CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // hourly — refresh tokens are 7-day, hourly granularity is generous
@@ -44,7 +49,15 @@ export class RefreshTokenJanitor implements OnApplicationBootstrap, OnApplicatio
         this.logger.log(`Cleaned up ${deleted} expired/long-revoked refresh token row(s)`);
       }
     } catch (err) {
-      this.logger.error("Cleanup failed", err instanceof Error ? err.stack : String(err));
+      // Be defensive: postgres-js sometimes rejects with non-Error values
+      // (or Errors without .stack), so render whichever shape we got.
+      const detail =
+        err instanceof Error
+          ? (err.stack ?? `${err.name}: ${err.message}`)
+          : typeof err === "object" && err !== null
+            ? JSON.stringify(err)
+            : `${err}`;
+      this.logger.error(`Cleanup failed: ${detail}`);
     }
   }
 }

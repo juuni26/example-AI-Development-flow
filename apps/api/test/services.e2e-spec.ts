@@ -68,9 +68,9 @@ describe("services list (e2e)", () => {
   it("filters by both status and category", async () => {
     const body = await list("?status=Active&category=Residential");
     expect(body.total).toBeGreaterThanOrEqual(2);
-    expect(
-      body.data.every((s) => s.status === "Active" && s.category === "Residential"),
-    ).toBe(true);
+    expect(body.data.every((s) => s.status === "Active" && s.category === "Residential")).toBe(
+      true,
+    );
   });
 
   it("ILIKE search hits both name and description, case-insensitive", async () => {

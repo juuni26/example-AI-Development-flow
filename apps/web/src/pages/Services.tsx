@@ -14,12 +14,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import {
-  categorySchema,
-  statusSchema,
-  type Service,
-  type SortableColumn,
-} from "@cleandrop/shared";
+import { categorySchema, statusSchema, type Service, type SortableColumn } from "@cleandrop/shared";
 import { AppShell } from "@/components/AppShell";
 import { ColumnFilter, type ColumnFilterOption } from "@/components/ColumnFilter";
 import { DeleteServiceDialog } from "@/components/DeleteServiceDialog";
@@ -160,7 +155,7 @@ export function ServicesPage(): JSX.Element {
       <Card className="shadow-soft-1">
         <CardHeader className="flex flex-row items-center justify-between gap-4 px-8 ">
           <div className="flex flex-col">
-            <CardTitle className="text-lg">Catalog</CardTitle>           
+            <CardTitle className="text-lg">Catalog</CardTitle>
           </div>
           {isAdmin ? (
             <Button size="sm" variant="outline" onClick={openCreate} className="shrink-0">
@@ -247,7 +242,10 @@ export function ServicesPage(): JSX.Element {
                       <ColumnFilter
                         label="Company"
                         value={companyId}
-                        options={(companies.data ?? []).map((c) => ({ value: c.id, label: c.name }))}
+                        options={(companies.data ?? []).map((c) => ({
+                          value: c.id,
+                          label: c.name,
+                        }))}
                         onChange={(v) => setCompanyId(v)}
                       />
                     }
@@ -291,7 +289,9 @@ export function ServicesPage(): JSX.Element {
                   <TableRow>
                     <TableCell colSpan={isAdmin ? 6 : 5}>
                       <div className="flex flex-col items-center gap-3 py-10 text-sm text-muted-foreground">
-                        <span>Could not load services. {error instanceof Error ? error.message : ""}</span>
+                        <span>
+                          Could not load services. {error instanceof Error ? error.message : ""}
+                        </span>
                         <Button variant="outline" size="sm" onClick={() => void refetch()}>
                           Retry
                         </Button>
@@ -391,10 +391,7 @@ export function ServicesPage(): JSX.Element {
                   Rows per page
                 </span>
                 <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
-                  <SelectTrigger
-                    aria-labelledby="rows-per-page-label"
-                    className="h-8 w-[72px]"
-                  >
+                  <SelectTrigger aria-labelledby="rows-per-page-label" className="h-8 w-[72px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -432,11 +429,7 @@ export function ServicesPage(): JSX.Element {
         </CardContent>
       </Card>
 
-      <ServiceFormSheet
-        open={sheet.open}
-        service={sheet.service}
-        onOpenChange={closeSheet}
-      />
+      <ServiceFormSheet open={sheet.open} service={sheet.service} onOpenChange={closeSheet} />
       <DeleteServiceDialog
         service={pendingDelete}
         onOpenChange={(open) => {

@@ -18,9 +18,7 @@ test.describe("polish: sidebar collapse + demo credentials copy", () => {
 
     // Reload and confirm the collapse state survived via localStorage.
     await page.reload();
-    await expect(
-      sidebar.getByRole("button", { name: "Expand sidebar" }),
-    ).toBeVisible();
+    await expect(sidebar.getByRole("button", { name: "Expand sidebar" })).toBeVisible();
 
     // Expand again to leave the app in a default-ish state for subsequent tests.
     await sidebar.getByRole("button", { name: "Expand sidebar" }).click();
@@ -49,8 +47,6 @@ test.describe("polish: sidebar collapse + demo credentials copy", () => {
     // promise resolves we should be on /services.
     await page.getByRole("button", { name: /^use$/i }).first().click();
     await page.waitForURL("**/services");
-    await expect(
-      page.getByRole("heading", { name: "Services", exact: true }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Services", exact: true })).toBeVisible();
   });
 });

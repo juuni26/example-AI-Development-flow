@@ -42,7 +42,11 @@ const formValuesSchema = z.object({
   category: categorySchema,
   companyId: z.string().uuid({ message: "Pick a company" }),
   status: statusSchema,
-  durationMinutes: z.coerce.number().int("Whole minutes").min(1, "Must be at least 1 minute").max(1440),
+  durationMinutes: z.coerce
+    .number()
+    .int("Whole minutes")
+    .min(1, "Must be at least 1 minute")
+    .max(1440),
   basePriceMajor: z.coerce
     .number()
     .min(0, "Base price cannot be negative")
@@ -77,7 +81,11 @@ interface ServiceFormSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function ServiceFormSheet({ open, service, onOpenChange }: ServiceFormSheetProps): JSX.Element {
+export function ServiceFormSheet({
+  open,
+  service,
+  onOpenChange,
+}: ServiceFormSheetProps): JSX.Element {
   const companies = useCompaniesQuery(open);
   const create = useCreateService();
   const update = useUpdateService();
@@ -156,7 +164,9 @@ export function ServiceFormSheet({ open, service, onOpenChange }: ServiceFormShe
               >
                 <Select
                   value={form.watch("category")}
-                  onValueChange={(v) => form.setValue("category", v as never, { shouldDirty: true })}
+                  onValueChange={(v) =>
+                    form.setValue("category", v as never, { shouldDirty: true })
+                  }
                 >
                   <SelectTrigger id="svc-category">
                     <SelectValue />
@@ -329,4 +339,3 @@ function handleApiError(err: unknown, setError: UseFormSetError<FormValues>): vo
   }
   toast.error(parsed.message);
 }
-

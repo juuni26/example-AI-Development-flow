@@ -1,15 +1,7 @@
 import type { JSX, ReactNode } from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Briefcase,
-  ChevronsLeft,
-  ChevronsRight,
-  LogOut,
-  Menu,
-  UserRound,
-  X,
-} from "lucide-react";
+import { Briefcase, ChevronsLeft, ChevronsRight, LogOut, Menu, UserRound, X } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -89,7 +81,10 @@ export function AppShell({ children }: { children: ReactNode }): JSX.Element {
         )}
         aria-hidden={!mobileOpen}
       >
-        <div
+        <button
+          type="button"
+          aria-label="Close navigation"
+          tabIndex={mobileOpen ? 0 : -1}
           className="absolute inset-0 bg-black/40 transition-opacity"
           onClick={() => setMobileOpen(false)}
         />
@@ -174,9 +169,7 @@ function SidebarBody({
                 className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
                 aria-label="Settings"
                 title="Settings"
-              >
-                
-              </button>
+              ></button>
               {onToggle ? (
                 <button
                   type="button"
@@ -256,7 +249,9 @@ function SidebarBody({
               />
               {!collapsed ? (
                 <span className="flex min-w-0 flex-col">
-                  <span className="truncate text-sm font-medium text-foreground">{displayName}</span>
+                  <span className="truncate text-sm font-medium text-foreground">
+                    {displayName}
+                  </span>
                   <span className="truncate text-[11px] font-normal uppercase tracking-wide text-muted-foreground">
                     {roleLabel}
                   </span>

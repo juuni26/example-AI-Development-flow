@@ -85,9 +85,7 @@ api.interceptors.response.use(
     const url = original?.url ?? "";
 
     const isAuthEndpoint =
-      url.includes("/auth/login") ||
-      url.includes("/auth/refresh") ||
-      url.includes("/auth/logout");
+      url.includes("/auth/login") || url.includes("/auth/refresh") || url.includes("/auth/logout");
 
     // Only attempt refresh on first 401 for non-auth endpoints.
     if (status !== 401 || !original || original._retried || isAuthEndpoint) {

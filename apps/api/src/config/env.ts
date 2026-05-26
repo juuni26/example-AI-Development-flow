@@ -18,6 +18,23 @@ const envSchema = z
     JWT_SECRET: z.string().min(16, "JWT_SECRET must be at least 16 characters"),
     ACCESS_TOKEN_TTL: z.string().default("15m"),
 
+    // Parsed to milliseconds at boot. Accepted suffixes: s, m, h, d.
+    // Default "7d" matches the original hardcoded constant.
+    REFRESH_TOKEN_TTL: z
+      .string()
+      .default("7d")
+      .transform((raw, ctx) => {
+        const ms = parseDurationMs(raw);
+        if (ms === null) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Invalid duration "${raw}". Expected e.g. "7d", "12h", "30m", "60s".`,
+          });
+          return z.NEVER;
+        }
+        return ms;
+      }),
+
     // Comma-separated CORS allowlist. Empty/unset means "deny cross-origin"
     // — same-origin Postman/curl still works since CORS only applies to
     // browser fetches with a non-null Origin header.
@@ -64,4 +81,20 @@ export function loadEnv(): Env {
 /** Forces the next loadEnv() to re-read process.env. Tests only. */
 export function __resetEnvCacheForTesting(): void {
   cached = null;
+}
+
+const UNIT_MS: Record<string, number> = {
+  s: 1_000,
+  m: 60_000,
+  h: 3_600_000,
+  d: 86_400_000,
+};
+
+/** Parses durations like "7d", "12h", "30m", "60s" to milliseconds. */
+function parseDurationMs(raw: string): number | null {
+  const match = /^(\d+)\s*([smhd])$/.exec(raw.trim());
+  if (!match) return null;
+  const n = Number.parseInt(match[1], 10);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return n * UNIT_MS[match[2]];
 }

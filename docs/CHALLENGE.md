@@ -12,10 +12,10 @@ Implement a login flow and a **Services** page at `/services`. After a successfu
 
 Access is controlled by a **JWT** that includes a `role` claim:
 
-| Role | Access |
-|------|--------|
-| `admin` | Full CRUD on services (create, read, update, delete) |
-| `user` | Read-only (list and view services; no create, edit, or delete) |
+| Role    | Access                                                         |
+| ------- | -------------------------------------------------------------- |
+| `admin` | Full CRUD on services (create, read, update, delete)           |
+| `user`  | Read-only (list and view services; no create, edit, or delete) |
 
 Enforce authorization on both the **API** and the **UI** (e.g. hide or disable actions the user cannot perform).
 
@@ -38,15 +38,15 @@ You may seed sample data so the page looks like the reference (9 services, mixed
 
 ## Tech stack (required)
 
-| Layer | Stack |
-|-------|--------|
-| Runtime / package manager | **Bun** |
-| Backend | **NestJS** (TypeScript) |
-| ORM | **Drizzle ORM** |
-| Database | **PostgreSQL** |
-| Frontend UI | **shadcn/ui** |
-| Tests (backend) | **Jest** |
-| Dev environment | **Docker** (app + database runnable via `docker compose`) |
+| Layer                     | Stack                                                     |
+| ------------------------- | --------------------------------------------------------- |
+| Runtime / package manager | **Bun**                                                   |
+| Backend                   | **NestJS** (TypeScript)                                   |
+| ORM                       | **Drizzle ORM**                                           |
+| Database                  | **PostgreSQL**                                            |
+| Frontend UI               | **shadcn/ui**                                             |
+| Tests (backend)           | **Jest**                                                  |
+| Dev environment           | **Docker** (app + database runnable via `docker compose`) |
 
 ---
 

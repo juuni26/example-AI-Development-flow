@@ -40,12 +40,18 @@ export const AlertDialogContent = React.forwardRef<
 ));
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
-export function AlertDialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): JSX.Element {
+export function AlertDialogHeader({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>): JSX.Element {
   return <div className={cn("flex flex-col gap-2 text-left", className)} {...props} />;
 }
 AlertDialogHeader.displayName = "AlertDialogHeader";
 
-export function AlertDialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): JSX.Element {
+export function AlertDialogFooter({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>): JSX.Element {
   return (
     <div
       className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-2", className)}
@@ -59,7 +65,11 @@ export const AlertDialogTitle = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Title>
 >(({ className, ...props }, ref) => (
-  <AlertDialogPrimitive.Title ref={ref} className={cn("text-base font-semibold", className)} {...props} />
+  <AlertDialogPrimitive.Title
+    ref={ref}
+    className={cn("text-base font-semibold", className)}
+    {...props}
+  />
 ));
 AlertDialogTitle.displayName = AlertDialogPrimitive.Title.displayName;
 

@@ -1,5 +1,5 @@
-import type { JSX, ReactNode } from "react";
-import { Briefcase, Clock, DollarSign, FileEdit, Layers, SquarePen } from "lucide-react";
+import type { JSX } from "react";
+import { Briefcase, Clock, DollarSign, SquarePen } from "lucide-react";
 import { formatMoneyCompact, type ServicesSummary } from "@cleandrop/shared";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,7 +34,9 @@ export function SummaryCards({
     <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {cards
         ? cards.map((c) => <SummaryCard key={c.label} {...c} />)
-        : Array.from({ length: 4 }).map((_, i) => <SummaryCardSkeleton key={i} loading={isLoading} />)}
+        : Array.from({ length: 4 }).map((_, i) => (
+            <SummaryCardSkeleton key={i} loading={isLoading} />
+          ))}
     </section>
   );
 }

@@ -17,8 +17,7 @@ const badgeVariants = cva(
         active: "border-transparent bg-foreground text-background",
         draft: "border-transparent bg-muted text-foreground",
         inactive: "border-border bg-background text-foreground",
-        muted:
-          "border-border/60 bg-muted text-muted-foreground",
+        muted: "border-border/60 bg-muted text-muted-foreground",
       },
     },
     defaultVariants: { variant: "default" },
@@ -26,8 +25,7 @@ const badgeVariants = cva(
 );
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLSpanElement>,
-    VariantProps<typeof badgeVariants> {}
+  extends React.HTMLAttributes<HTMLSpanElement>, VariantProps<typeof badgeVariants> {}
 
 export function Badge({ className, variant, ...props }: BadgeProps): JSX.Element {
   return <span className={cn(badgeVariants({ variant }), className)} {...props} />;

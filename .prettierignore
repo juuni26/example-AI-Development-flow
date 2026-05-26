@@ -1,0 +1,19 @@
+# Build artefacts
+**/dist
+**/build
+**/.next
+**/coverage
+
+# Drizzle migrations are generated SQL
+apps/api/drizzle
+
+# Lockfiles & bundler output
+bun.lock
+**/node_modules
+
+# Test artefacts
+apps/web/test-results
+apps/web/playwright-report
+
+# Logs
+*.log

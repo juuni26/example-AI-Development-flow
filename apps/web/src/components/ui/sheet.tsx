@@ -42,7 +42,8 @@ const sheetVariants = cva(
 );
 
 export interface SheetContentProps
-  extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
+  extends
+    React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
     VariantProps<typeof sheetVariants> {}
 
 export const SheetContent = React.forwardRef<
@@ -66,14 +67,23 @@ export const SheetContent = React.forwardRef<
 ));
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
-export function SheetHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): JSX.Element {
+export function SheetHeader({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>): JSX.Element {
   return (
-    <div className={cn("flex flex-col space-y-2 border-b px-6 py-4 text-left", className)} {...props} />
+    <div
+      className={cn("flex flex-col space-y-2 border-b px-6 py-4 text-left", className)}
+      {...props}
+    />
   );
 }
 SheetHeader.displayName = "SheetHeader";
 
-export function SheetFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>): JSX.Element {
+export function SheetFooter({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>): JSX.Element {
   return (
     <div
       className={cn(

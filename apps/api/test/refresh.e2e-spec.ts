@@ -75,21 +75,12 @@ describe("refresh + logout (e2e)", () => {
   it("logout revokes the row; subsequent refresh with that token returns 401", async () => {
     const { refreshToken } = await login();
 
-    await request(ctx.app.getHttpServer())
-      .post("/auth/logout")
-      .send({ refreshToken })
-      .expect(204);
+    await request(ctx.app.getHttpServer()).post("/auth/logout").send({ refreshToken }).expect(204);
 
-    await request(ctx.app.getHttpServer())
-      .post("/auth/refresh")
-      .send({ refreshToken })
-      .expect(401);
+    await request(ctx.app.getHttpServer()).post("/auth/refresh").send({ refreshToken }).expect(401);
 
     // Logging out again is idempotent (no row to revoke, still 204).
-    await request(ctx.app.getHttpServer())
-      .post("/auth/logout")
-      .send({ refreshToken })
-      .expect(204);
+    await request(ctx.app.getHttpServer()).post("/auth/logout").send({ refreshToken }).expect(204);
   });
 
   it("refresh with an unknown token returns 401", async () => {
@@ -110,12 +101,8 @@ describe("refresh + logout (e2e)", () => {
     const { refreshToken } = await login();
 
     const [a, b] = await Promise.all([
-      request(ctx.app.getHttpServer())
-        .post("/auth/refresh")
-        .send({ refreshToken }),
-      request(ctx.app.getHttpServer())
-        .post("/auth/refresh")
-        .send({ refreshToken }),
+      request(ctx.app.getHttpServer()).post("/auth/refresh").send({ refreshToken }),
+      request(ctx.app.getHttpServer()).post("/auth/refresh").send({ refreshToken }),
     ]);
 
     const statuses = [a.status, b.status].sort();
@@ -131,9 +118,6 @@ describe("refresh + logout (e2e)", () => {
   });
 
   it("refresh with a malformed body returns 400", async () => {
-    await request(ctx.app.getHttpServer())
-      .post("/auth/refresh")
-      .send({})
-      .expect(400);
+    await request(ctx.app.getHttpServer()).post("/auth/refresh").send({}).expect(400);
   });
 });

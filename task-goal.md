@@ -15,13 +15,13 @@ docker compose up -d
 
 That brings up Postgres, applies migrations, seeds the catalog, and starts the API + web. The compose lifecycle is `db (healthcheck) → migrate → seed → api → web`; later `docker compose up` calls are idempotent (seed checks for existing rows).
 
-| Surface | URL |
-|---|---|
-| Web app | http://localhost:8080 |
-| API | http://localhost:3000 |
-| OpenAPI docs (Swagger UI) | http://localhost:3000/api/docs |
-| OpenAPI JSON | http://localhost:3000/api/docs-json |
-| Health | http://localhost:3000/healthz |
+| Surface                   | URL                                 |
+| ------------------------- | ----------------------------------- |
+| Web app                   | http://localhost:8080               |
+| API                       | http://localhost:3000               |
+| OpenAPI docs (Swagger UI) | http://localhost:3000/api/docs      |
+| OpenAPI JSON              | http://localhost:3000/api/docs-json |
+| Health                    | http://localhost:3000/healthz       |
 
 If those host ports clash with other services on your machine, override in `.env`:
 
@@ -40,10 +40,10 @@ After changing `VITE_API_URL` you need `docker compose build web` so the new val
 
 This README is the only place these credentials exist; there is no signup endpoint by design.
 
-| Role | Email | Password |
-|---|---|---|
+| Role                | Email                  | Password               |
+| ------------------- | ---------------------- | ---------------------- |
 | `admin` (full CRUD) | `admin@cleandrop.test` | `Cleandrop!Admin-2026` |
-| `user` (read-only) | `user@cleandrop.test` | `Cleandrop!User-2026` |
+| `user` (read-only)  | `user@cleandrop.test`  | `Cleandrop!User-2026`  |
 
 Passwords are stored as bcrypt hashes (`bcrypt.hash(plaintext, 10)`).
 
@@ -89,10 +89,12 @@ cleandrop/
 ```
 
 **One shared package**, used by both web and API:
+
 - Zod schemas drive **runtime validation** (`nestjs-zod` ValidationPipe), **TypeScript types** (`z.infer`), **OpenAPI docs** (`nestjs-zod`'s Swagger integration), and **frontend form validation** (react-hook-form's `zodResolver`).
 - Money is integer cents throughout, single currency `EUR`. See [ADR 0001](./docs/adr/0001-money-as-integer-cents-single-currency.md).
 
 **Auth**:
+
 - Access JWT (15 min, HS256) in `localStorage`, sent as `Authorization: Bearer …`.
 - Refresh token (256-bit opaque, base64url, 7 days) in `localStorage`; stored server-side as a SHA-256 hash.
 - Refresh rotates: each `POST /auth/refresh` revokes the old row and issues a new one with `replaced_by_id` linking back. **Reuse detection cascade**: presenting an already-revoked refresh token revokes every refresh row for that user. See [ADR 0002](./docs/adr/0002-refresh-token-rotation-with-reuse-detection.md).
@@ -106,19 +108,19 @@ Open the Swagger UI at http://localhost:3000/api/docs (no auth required to read 
 
 Quick tour:
 
-| Method | Path | Auth | Notes |
-|---|---|---|---|
-| `POST` | `/auth/login` | none | Returns `{ accessToken, refreshToken, user }` |
-| `POST` | `/auth/refresh` | none | Rotates; replaying a revoked token → cascade revoke + 401 |
-| `POST` | `/auth/logout` | none | Revokes the presented refresh token (idempotent) |
-| `GET` | `/me` | bearer | Echoes the user from the JWT |
-| `GET` | `/services` | bearer | `?search=&status=&category=&sortBy=&sortDir=&page=&pageSize=` |
-| `GET` | `/services/summary` | bearer | Aggregates for the four cards |
-| `GET` | `/services/:id` | bearer | 404 on miss |
-| `POST` | `/services` | bearer + `admin` | 201 |
-| `PATCH` | `/services/:id` | bearer + `admin` | 200, 404 on miss |
-| `DELETE` | `/services/:id` | bearer + `admin` | 204, 404 on miss |
-| `GET` | `/companies` | bearer | For the form's dropdown |
+| Method   | Path                | Auth             | Notes                                                         |
+| -------- | ------------------- | ---------------- | ------------------------------------------------------------- |
+| `POST`   | `/auth/login`       | none             | Returns `{ accessToken, refreshToken, user }`                 |
+| `POST`   | `/auth/refresh`     | none             | Rotates; replaying a revoked token → cascade revoke + 401     |
+| `POST`   | `/auth/logout`      | none             | Revokes the presented refresh token (idempotent)              |
+| `GET`    | `/me`               | bearer           | Echoes the user from the JWT                                  |
+| `GET`    | `/services`         | bearer           | `?search=&status=&category=&sortBy=&sortDir=&page=&pageSize=` |
+| `GET`    | `/services/summary` | bearer           | Aggregates for the four cards                                 |
+| `GET`    | `/services/:id`     | bearer           | 404 on miss                                                   |
+| `POST`   | `/services`         | bearer + `admin` | 201                                                           |
+| `PATCH`  | `/services/:id`     | bearer + `admin` | 200, 404 on miss                                              |
+| `DELETE` | `/services/:id`     | bearer + `admin` | 204, 404 on miss                                              |
+| `GET`    | `/companies`        | bearer           | For the form's dropdown                                       |
 
 ## Tests
 
@@ -130,6 +132,7 @@ bun --filter @cleandrop/api test:e2e
 ```
 
 What's covered (45 tests across 5 suites):
+
 - **auth** (7) — login happy + bad password + missing user + malformed body; `/me` valid / missing / malformed token.
 - **refresh** (6) — login issues both tokens; rotation chain advances forward; reuse-detection cascade (`r1 → r2`; replay `r1` → 401 AND `r2` is dead); logout revokes (idempotent); unknown refresh → 401; malformed body → 400.
 - **services** (15) — list with each filter, ILIKE search across name + description (case-insensitive), sort by each column with `id ASC` tiebreaker, 3-page pagination with no overlap, page-beyond-last returns empty + correct total, stable tiebreaker across requests, invalid `sortBy` → 400, 401 without bearer.
@@ -150,18 +153,18 @@ Domain glossary and full stack decisions: [CONTEXT.md](./CONTEXT.md).
 
 ## Tech stack
 
-| Layer | Stack |
-|---|---|
-| Runtime / package manager | Bun 1.1+ |
-| Backend | NestJS 10 (TypeScript) |
-| ORM | Drizzle 0.33 |
-| Database | PostgreSQL 16 |
-| Validation | Zod via `nestjs-zod` (one schema → validation + types + OpenAPI + frontend form) |
-| Auth | `@nestjs/jwt` (HS256), bcryptjs for password hashing, SHA-256 for refresh-token hashes |
-| Tests (backend) | Jest + supertest + Testcontainers |
-| OpenAPI | `@nestjs/swagger` + `nestjs-zod` Swagger patch, Swagger UI at `/api/docs` |
-| Frontend | Vite 5 + React 18 + react-router + Tailwind + shadcn/ui + React Query + react-hook-form |
-| Dev environment | Docker compose (Postgres + migrate + seed + api + web) |
+| Layer                     | Stack                                                                                   |
+| ------------------------- | --------------------------------------------------------------------------------------- |
+| Runtime / package manager | Bun 1.1+                                                                                |
+| Backend                   | NestJS 10 (TypeScript)                                                                  |
+| ORM                       | Drizzle 0.33                                                                            |
+| Database                  | PostgreSQL 16                                                                           |
+| Validation                | Zod via `nestjs-zod` (one schema → validation + types + OpenAPI + frontend form)        |
+| Auth                      | `@nestjs/jwt` (HS256), bcryptjs for password hashing, SHA-256 for refresh-token hashes  |
+| Tests (backend)           | Jest + supertest + Testcontainers                                                       |
+| OpenAPI                   | `@nestjs/swagger` + `nestjs-zod` Swagger patch, Swagger UI at `/api/docs`               |
+| Frontend                  | Vite 5 + React 18 + react-router + Tailwind + shadcn/ui + React Query + react-hook-form |
+| Dev environment           | Docker compose (Postgres + migrate + seed + api + web)                                  |
 
 ## Notes for the evaluator
 

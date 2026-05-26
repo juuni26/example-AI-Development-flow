@@ -74,7 +74,9 @@ function AccountRow({
             <span className="text-[11px] font-medium uppercase tracking-wide text-foreground/80">
               {account.label}
             </span>
-            <span className="truncate text-[10.5px] text-muted-foreground">{account.description}</span>
+            <span className="truncate text-[10.5px] text-muted-foreground">
+              {account.description}
+            </span>
           </div>
         </div>
         {onUse ? (

@@ -10,7 +10,8 @@ export function NotFoundPage(): JSX.Element {
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Error 404</p>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight">Page not found</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist, has moved, or you don't have access to it.
+          The page you&apos;re looking for doesn&apos;t exist, has moved, or you don&apos;t have
+          access to it.
         </p>
         <div className="mt-6 flex justify-center">
           <Button asChild variant="default">

@@ -62,7 +62,9 @@ test.describe("catalog read path (as user)", () => {
 
     // First visible name in the table body should now start alphabetically.
     const firstBodyRowName = page.getByRole("table").locator("tbody tr").first();
-    await expect(firstBodyRowName).toContainText(/Carpet|Deep|Move|Office|Post|Retail|Standard|Window/);
+    await expect(firstBodyRowName).toContainText(
+      /Carpet|Deep|Move|Office|Post|Retail|Standard|Window/,
+    );
 
     await nameHeader.click();
     await expect(page).toHaveURL(/[?&]sortDir=desc/);

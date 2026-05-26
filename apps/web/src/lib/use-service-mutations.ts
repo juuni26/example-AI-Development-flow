@@ -1,9 +1,5 @@
 import { useMutation, useQueryClient, type UseMutationResult } from "@tanstack/react-query";
-import type {
-  CreateServiceRequest,
-  Service,
-  UpdateServiceRequest,
-} from "@cleandrop/shared";
+import type { CreateServiceRequest, Service, UpdateServiceRequest } from "@cleandrop/shared";
 import { api } from "./api";
 
 /** Invalidates both the catalog list and the summary cards after any write. */

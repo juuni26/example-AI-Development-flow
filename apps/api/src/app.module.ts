@@ -30,8 +30,7 @@ import { UsersModule } from "./users/users.module";
       // browser e2e (Playwright) and would otherwise trip the limit.
       // Production deployments leave NODE_ENV unset or "production" so the
       // throttle is fully active.
-      skipIf: () =>
-        process.env.NODE_ENV !== "production" || process.env.DISABLE_THROTTLE === "1",
+      skipIf: () => process.env.NODE_ENV !== "production" || process.env.DISABLE_THROTTLE === "1",
     }),
     DbModule,
     HealthModule,

@@ -28,7 +28,11 @@ test.describe("authentication flow", () => {
     await page.goto("/login");
     await page.getByRole("textbox", { name: "Email", exact: true }).fill(CREDENTIALS.admin.email);
     await page.locator("#password").fill("definitely-wrong");
-    await page.locator("form").first().getByRole("button", { name: /^sign in$/i }).click();
+    await page
+      .locator("form")
+      .first()
+      .getByRole("button", { name: /^sign in$/i })
+      .click();
 
     const alert = page.getByRole("alert");
     await expect(alert).toBeVisible();

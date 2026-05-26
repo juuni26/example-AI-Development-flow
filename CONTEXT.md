@@ -3,24 +3,31 @@
 ## Glossary
 
 ### Service
+
 A unit in the catalog (e.g. "Standard Clean", "Deep Clean"). Has a name, description, category, status, duration, base price, and is offered by exactly one Company.
 
 ### Company
+
 The service provider that offers a Service (e.g. "Acme Cleaning S.r.l."). First-class entity with its own table; a Company offers many Services. **Not a tenant** — access control is purely role-based, not company-scoped. The header badge "Platform-wide" reflects this: every authenticated user sees the global catalog.
 
 ### Duration
+
 How long a Service takes to perform. Stored as `duration_minutes: integer`. Displayed as `"90 min"` when under 60, otherwise as `"3 h 30 min"`.
 
 ### Base Price
+
 The price a Company charges for a Service. Stored as `base_price_cents: integer` (minor units). Currency is a single app-wide constant `EUR` — not a column. Displayed as `EUR 159.00`. The "Avg. Base Price" summary card is a server-side `AVG` over `base_price_cents`, formatted on the client.
 
 ### Category
+
 A label on a Service. Postgres enum / TS union with values `Residential`, `Commercial`, `Specialty`. Closed set — adding one is a code + migration change. (Chose enum over a lookup table because no runtime admin UI manages categories; the table would be inert.)
 
 ### Status
+
 A label on a Service. One of `Active` (published & bookable), `Draft` (work-in-progress), `Inactive` (retired). Pure metadata — no effect on visibility. All authenticated users see services in every status; only admins can change a service's status. No transition rules — any status can move to any other.
 
 ### Role
+
 A claim on the JWT. Two values: `admin` (full CRUD on Services) and `user` (read-only). No per-company scoping.
 
 ## Stack decisions

@@ -72,9 +72,8 @@ export default {
       },
       boxShadow: {
         "soft-1": "0 1px 2px 0 hsl(240 6% 10% / 0.04), 0 1px 3px 0 hsl(240 6% 10% / 0.04)",
-        "soft-2":
-          "0 4px 12px -2px hsl(240 6% 10% / 0.06), 0 2px 6px -2px hsl(240 6% 10% / 0.04)",
-        "popover": "0 8px 24px -8px hsl(240 6% 10% / 0.12), 0 2px 6px -2px hsl(240 6% 10% / 0.06)",
+        "soft-2": "0 4px 12px -2px hsl(240 6% 10% / 0.06), 0 2px 6px -2px hsl(240 6% 10% / 0.04)",
+        popover: "0 8px 24px -8px hsl(240 6% 10% / 0.12), 0 2px 6px -2px hsl(240 6% 10% / 0.06)",
       },
       keyframes: {
         "fade-in": { from: { opacity: "0" }, to: { opacity: "1" } },

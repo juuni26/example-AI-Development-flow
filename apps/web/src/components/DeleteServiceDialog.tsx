@@ -22,7 +22,10 @@ interface DeleteServiceDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function DeleteServiceDialog({ service, onOpenChange }: DeleteServiceDialogProps): JSX.Element {
+export function DeleteServiceDialog({
+  service,
+  onOpenChange,
+}: DeleteServiceDialogProps): JSX.Element {
   const remove = useDeleteService();
   const [submitting, setSubmitting] = useState(false);
 
@@ -46,8 +49,8 @@ export function DeleteServiceDialog({ service, onOpenChange }: DeleteServiceDial
         <AlertDialogHeader>
           <AlertDialogTitle>Delete service</AlertDialogTitle>
           <AlertDialogDescription>
-            Delete <span className="font-semibold">"{service?.name ?? ""}"</span>? This cannot be
-            undone.
+            Delete <span className="font-semibold">&ldquo;{service?.name ?? ""}&rdquo;</span>? This
+            cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

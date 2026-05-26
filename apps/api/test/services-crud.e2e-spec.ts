@@ -54,10 +54,7 @@ describe("services CRUD + role gating (e2e)", () => {
 
   describe("authorization gates", () => {
     it("POST without token returns 401", async () => {
-      await request(ctx.app.getHttpServer())
-        .post("/services")
-        .send(validBody())
-        .expect(401);
+      await request(ctx.app.getHttpServer()).post("/services").send(validBody()).expect(401);
     });
 
     it("POST as user returns 403", async () => {

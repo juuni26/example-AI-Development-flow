@@ -31,4 +31,4 @@ Zod offers a single schema that simultaneously provides runtime validation, stat
 
 **Negative.** Departs from NestJS-101 tutorials, which assume class-validator. An evaluator looking specifically for `@IsString()` decorators won't see them. `nestjs-zod` is a third-party dep (mature, well-maintained) added to the dependency surface.
 
-**Reversibility.** Migrating away from Zod would require rewriting every DTO in class-validator form and re-annotating every controller for Swagger — meaningful work, but the *shapes* in `packages/shared` would still serve as the spec for that migration. The decision is reversible but expensive.
+**Reversibility.** Migrating away from Zod would require rewriting every DTO in class-validator form and re-annotating every controller for Swagger — meaningful work, but the _shapes_ in `packages/shared` would still serve as the spec for that migration. The decision is reversible but expensive.

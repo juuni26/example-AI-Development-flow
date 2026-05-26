@@ -52,12 +52,12 @@ export class AuthController {
   @Post("refresh")
   @HttpCode(200)
   @ApiOperation({
-    summary:
-      "Rotate the refresh token. Replaying a revoked token cascade-revokes the whole chain.",
+    summary: "Rotate the refresh token. Replaying a revoked token cascade-revokes the whole chain.",
   })
   @ApiResponse({
     status: 200,
-    description: "Rotated. Old refresh row is revoked; the returned pair is the new active session.",
+    description:
+      "Rotated. Old refresh row is revoked; the returned pair is the new active session.",
     schema: { example: examples.refresh.success },
   })
   @ApiResponse({

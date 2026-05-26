@@ -94,10 +94,7 @@ export function useCatalogParams(): {
     [params, setParams],
   );
 
-  const setSearch = useCallback(
-    (value: string) => patch({ search: value, page: "1" }),
-    [patch],
-  );
+  const setSearch = useCallback((value: string) => patch({ search: value, page: "1" }), [patch]);
   const setStatus = useCallback(
     (value: Status | "all") => patch({ status: value === "all" ? null : value, page: "1" }),
     [patch],

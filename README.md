@@ -1,6 +1,6 @@
 # Cleandrop — Services Catalog
 
-A small but production-grade fullstack take-home. **Cleandrop** is a services-catalog application where an `admin` manages cleaning-service listings and a read-only `user` browses them. The visible feature set is intentionally narrow; the depth is in *how* it's built — schema design, role enforcement at every layer, a single Zod schema driving validation + types + OpenAPI + form, refresh tokens with reuse detection, server-side filter/sort/pagination, and 63 automated tests against real Postgres + a real browser.
+A small but production-grade fullstack take-home. **Cleandrop** is a services-catalog application where an `admin` manages cleaning-service listings and a read-only `user` browses them. The visible feature set is intentionally narrow; the depth is in _how_ it's built — schema design, role enforcement at every layer, a single Zod schema driving validation + types + OpenAPI + form, refresh tokens with reuse detection, server-side filter/sort/pagination, and 63 automated tests against real Postgres + a real browser.
 
 The original challenge brief is in [`docs/CHALLENGE.md`](./docs/CHALLENGE.md). A run-and-test cheat sheet, full glossary, and ADRs live in [`task-goal.md`](./task-goal.md), [`CONTEXT.md`](./CONTEXT.md), and [`docs/adr/`](./docs/adr/) — this README is the narrative.
 
@@ -23,12 +23,12 @@ Seeded credentials are surfaced on the login page itself with click-to-copy butt
 
 ## How I approached it
 
-The build is structured as **seven vertical slices** (issues #1–#7 in the tracker) plus two follow-ons (#15 Playwright e2e, #17 UI polish). Each slice cuts end-to-end through schema, API, shared types, web UI, and tests — never a horizontal layer in isolation. The dependency chain is strict (#2 blocks #3, etc.), which means at any commit on `main` the app is *demoable*, not a half-finished layer cake.
+The build is structured as **seven vertical slices** (issues #1–#7 in the tracker) plus two follow-ons (#15 Playwright e2e, #17 UI polish). Each slice cuts end-to-end through schema, API, shared types, web UI, and tests — never a horizontal layer in isolation. The dependency chain is strict (#2 blocks #3, etc.), which means at any commit on `main` the app is _demoable_, not a half-finished layer cake.
 
 Before any slice started, I sat down with the brief and the preview screenshot and worked through every load-bearing decision in a structured Q&A — domain language, money representation, auth scheme, validation strategy, repo layout, test scope, error shape, sort/pagination contract. The outputs are:
 
 - **[`CONTEXT.md`](./CONTEXT.md)** — domain glossary (Service / Company / Status / Role / Base Price / Duration) and the stack decisions in compact form.
-- **[`docs/adr/`](./docs/adr/)** — three architecture decision records for the choices that are *hard to reverse* (money model, refresh tokens, Zod as single source of truth).
+- **[`docs/adr/`](./docs/adr/)** — three architecture decision records for the choices that are _hard to reverse_ (money model, refresh tokens, Zod as single source of truth).
 
 Then each slice was implemented, tested, and merged via PR. Test counts are committed-in: 45 backend e2e + 18 Playwright = **63 automated checks** at the time of writing.
 
@@ -42,12 +42,12 @@ For every meaningful fork I hit, I considered the alternatives explicitly. Here 
 
 NestJS's default validation story uses `class-validator` + `class-transformer` decorators on DTO classes. It's the path of least resistance — the framework is built for it. I rejected it because **one shared Zod schema** in `packages/shared` becomes the single source of truth for **four** consumers:
 
-| Concern | With class-validator | With Zod (chosen) |
-|---|---|---|
-| API request validation | `@IsString()` decorators on a DTO class | `nestjs-zod` `ZodValidationPipe` |
-| TypeScript types | Hand-write a separate interface | `type X = z.infer<typeof schema>` |
-| OpenAPI doc shape | `@ApiProperty()` on every field | `nestjs-zod` Swagger patch |
-| Frontend form validation | Hand-write *again* in the client | Same schema with `react-hook-form` `zodResolver` |
+| Concern                  | With class-validator                    | With Zod (chosen)                                |
+| ------------------------ | --------------------------------------- | ------------------------------------------------ |
+| API request validation   | `@IsString()` decorators on a DTO class | `nestjs-zod` `ZodValidationPipe`                 |
+| TypeScript types         | Hand-write a separate interface         | `type X = z.infer<typeof schema>`                |
+| OpenAPI doc shape        | `@ApiProperty()` on every field         | `nestjs-zod` Swagger patch                       |
+| Frontend form validation | Hand-write _again_ in the client        | Same schema with `react-hook-form` `zodResolver` |
 
 With class-validator, the four representations drift independently — adding a field is a four-place edit. The class field's TypeScript type and its decorator can also disagree (`name: string` with no `@IsString()` passes validation and explodes at runtime). With Zod, one edit propagates; runtime check and inferred type are the same definition by construction.
 
@@ -144,14 +144,14 @@ Modal is too cramped for a 7-field form. A dedicated route (`/services/new`, `/s
 
 - ~480px of comfortable space for the form
 - The catalog stays visible behind, so the admin can see context while creating service #4 in a row
-- One component for create *and* edit (header flips between "New service" and "Edit service"); the form's `defaultValues` come from the row when editing, defaults when creating
+- One component for create _and_ edit (header flips between "New service" and "Edit service"); the form's `defaultValues` come from the row when editing, defaults when creating
 - Easy mobile fallback (bottom sheet)
 
 No deep-linkable URL for the edit state is the trade. For a take-home where no one is sharing `/services/42/edit` links, that's not a loss.
 
 ### Why a real popover token (instead of just `bg-white`)
 
-This sounds trivial but is the single most-instructive bug I caught. The original shadcn primitives used `bg-popover` but the `--popover` and `--popover-foreground` CSS custom properties were never defined in `index.css`. Tailwind's color resolver fell back to *transparent*, which meant every `Select`, `DropdownMenu`, `Sheet`, and `AlertDialog` panel rendered see-through — the field behind would bleed through the open option list. This was caught by the user looking at the running app, not by the test suite (the suite was happily clicking visually-broken elements because they were still functional). Fixed in #17 by defining the tokens, exposing them in the Tailwind theme, and applying `bg-popover` to every floating surface. The lesson: visual bugs need *visual* tests, which is why #15 added Playwright with screenshot-on-failure.
+This sounds trivial but is the single most-instructive bug I caught. The original shadcn primitives used `bg-popover` but the `--popover` and `--popover-foreground` CSS custom properties were never defined in `index.css`. Tailwind's color resolver fell back to _transparent_, which meant every `Select`, `DropdownMenu`, `Sheet`, and `AlertDialog` panel rendered see-through — the field behind would bleed through the open option list. This was caught by the user looking at the running app, not by the test suite (the suite was happily clicking visually-broken elements because they were still functional). Fixed in #17 by defining the tokens, exposing them in the Tailwind theme, and applying `bg-popover` to every floating surface. The lesson: visual bugs need _visual_ tests, which is why #15 added Playwright with screenshot-on-failure.
 
 ---
 
@@ -303,42 +303,42 @@ cleandrop/
 
 ## Run, test, verify
 
-| What | Command |
-|---|---|
-| **Bring up the stack** | `cp .env.example .env && docker compose up -d` |
-| Backend e2e (Testcontainers) | `bun --filter @cleandrop/api test:e2e` |
-| Browser e2e (Playwright) | `bun --filter @cleandrop/web test:e2e` (first time: `bunx playwright install chromium`) |
-| Build everything | `bun run build` |
-| Tear down (keep data) | `docker compose down` |
-| Tear down + drop volume | `docker compose down -v` |
+| What                         | Command                                                                                 |
+| ---------------------------- | --------------------------------------------------------------------------------------- |
+| **Bring up the stack**       | `cp .env.example .env && docker compose up -d`                                          |
+| Backend e2e (Testcontainers) | `bun --filter @cleandrop/api test:e2e`                                                  |
+| Browser e2e (Playwright)     | `bun --filter @cleandrop/web test:e2e` (first time: `bunx playwright install chromium`) |
+| Build everything             | `bun run build`                                                                         |
+| Tear down (keep data)        | `docker compose down`                                                                   |
+| Tear down + drop volume      | `docker compose down -v`                                                                |
 
 ### Service URLs
 
-| Surface | Default URL | Override via `.env` |
-|---|---|---|
-| Web app | http://localhost:8080 | `WEB_HOST_PORT` |
-| API | http://localhost:3000 | `API_HOST_PORT` |
-| OpenAPI / Swagger UI | http://localhost:3000/api/docs | follows `API_HOST_PORT` |
-| OpenAPI JSON | http://localhost:3000/api/docs-json | same |
-| Postgres | 5432 (host) | `POSTGRES_HOST_PORT` |
-| Health | http://localhost:3000/healthz | same |
+| Surface              | Default URL                         | Override via `.env`     |
+| -------------------- | ----------------------------------- | ----------------------- |
+| Web app              | http://localhost:8080               | `WEB_HOST_PORT`         |
+| API                  | http://localhost:3000               | `API_HOST_PORT`         |
+| OpenAPI / Swagger UI | http://localhost:3000/api/docs      | follows `API_HOST_PORT` |
+| OpenAPI JSON         | http://localhost:3000/api/docs-json | same                    |
+| Postgres             | 5432 (host)                         | `POSTGRES_HOST_PORT`    |
+| Health               | http://localhost:3000/healthz       | same                    |
 
 If you change `API_HOST_PORT`, also change `VITE_API_URL` and rebuild web (`docker compose build web`) — the URL is baked into the bundle at build time.
 
 ### Test scoreboard
 
-| Suite | Count | Wall-clock | What it proves |
-|---|---|---|---|
-| `auth.e2e-spec.ts` | 7 | ~5s | Login happy/sad paths, `/me` guard |
-| `refresh.e2e-spec.ts` | 6 | ~6s | Rotation chain, reuse-detection cascade, logout idempotency |
-| `services.e2e-spec.ts` | 15 | ~4s | Filters, ILIKE search, sort + `id ASC` tiebreaker, pagination boundaries |
-| `summary.e2e-spec.ts` | 3 | ~3s | Counts + avg match fixture |
-| `services-crud.e2e-spec.ts` | 14 | ~5s | Role-gated mutations, validation errors, FK 404s |
-| `auth.spec.ts` (Playwright) | 6 | ~3s | Browser login flow, redirects, sidebar identity |
-| `catalog.spec.ts` (Playwright) | 7 | ~5s | Filter/sort/pagination + role-hidden affordances |
-| `admin-crud.spec.ts` (Playwright) | 3 | ~5s | Sheet create → edit → delete; UI-bypass 403 |
-| `polish.spec.ts` (Playwright) | 2 | ~2s | Sidebar collapse persistence, demo-creds copy + "Use" |
-| **Total** | **63** | **~35s** | |
+| Suite                             | Count  | Wall-clock | What it proves                                                           |
+| --------------------------------- | ------ | ---------- | ------------------------------------------------------------------------ |
+| `auth.e2e-spec.ts`                | 7      | ~5s        | Login happy/sad paths, `/me` guard                                       |
+| `refresh.e2e-spec.ts`             | 6      | ~6s        | Rotation chain, reuse-detection cascade, logout idempotency              |
+| `services.e2e-spec.ts`            | 15     | ~4s        | Filters, ILIKE search, sort + `id ASC` tiebreaker, pagination boundaries |
+| `summary.e2e-spec.ts`             | 3      | ~3s        | Counts + avg match fixture                                               |
+| `services-crud.e2e-spec.ts`       | 14     | ~5s        | Role-gated mutations, validation errors, FK 404s                         |
+| `auth.spec.ts` (Playwright)       | 6      | ~3s        | Browser login flow, redirects, sidebar identity                          |
+| `catalog.spec.ts` (Playwright)    | 7      | ~5s        | Filter/sort/pagination + role-hidden affordances                         |
+| `admin-crud.spec.ts` (Playwright) | 3      | ~5s        | Sheet create → edit → delete; UI-bypass 403                              |
+| `polish.spec.ts` (Playwright)     | 2      | ~2s        | Sidebar collapse persistence, demo-creds copy + "Use"                    |
+| **Total**                         | **63** | **~35s**   |                                                                          |
 
 ---
 
@@ -346,19 +346,19 @@ If you change `API_HOST_PORT`, also change `VITE_API_URL` and rebuild web (`dock
 
 Hit Swagger UI at http://localhost:3000/api/docs (no auth needed to read; click **Authorize** with a Bearer JWT to try protected endpoints live). The spec is regenerated from the Zod schemas every time the api boots — it can't drift.
 
-| Method | Path | Auth | Notes |
-|---|---|---|---|
-| `POST` | `/auth/login` | none | Returns `{ accessToken, refreshToken, user }` |
-| `POST` | `/auth/refresh` | none | Rotates; replaying a revoked token → cascade revoke + 401 |
-| `POST` | `/auth/logout` | none | Revokes the presented refresh token (idempotent) |
-| `GET` | `/me` | bearer | Echoes the user from the JWT |
-| `GET` | `/services` | bearer | `?search=&status=&category=&sortBy=&sortDir=&page=&pageSize=` |
-| `GET` | `/services/summary` | bearer | Aggregates for the four cards |
-| `GET` | `/services/:id` | bearer | 404 on miss |
-| `POST` | `/services` | bearer + `admin` | 201; FK violation on bad `companyId` → clean 404 |
-| `PATCH` | `/services/:id` | bearer + `admin` | 200, 404 on miss; empty body → 400 (at-least-one-field rule) |
-| `DELETE` | `/services/:id` | bearer + `admin` | 204, 404 on miss |
-| `GET` | `/companies` | bearer | For the form's dropdown |
+| Method   | Path                | Auth             | Notes                                                         |
+| -------- | ------------------- | ---------------- | ------------------------------------------------------------- |
+| `POST`   | `/auth/login`       | none             | Returns `{ accessToken, refreshToken, user }`                 |
+| `POST`   | `/auth/refresh`     | none             | Rotates; replaying a revoked token → cascade revoke + 401     |
+| `POST`   | `/auth/logout`      | none             | Revokes the presented refresh token (idempotent)              |
+| `GET`    | `/me`               | bearer           | Echoes the user from the JWT                                  |
+| `GET`    | `/services`         | bearer           | `?search=&status=&category=&sortBy=&sortDir=&page=&pageSize=` |
+| `GET`    | `/services/summary` | bearer           | Aggregates for the four cards                                 |
+| `GET`    | `/services/:id`     | bearer           | 404 on miss                                                   |
+| `POST`   | `/services`         | bearer + `admin` | 201; FK violation on bad `companyId` → clean 404              |
+| `PATCH`  | `/services/:id`     | bearer + `admin` | 200, 404 on miss; empty body → 400 (at-least-one-field rule)  |
+| `DELETE` | `/services/:id`     | bearer + `admin` | 204, 404 on miss                                              |
+| `GET`    | `/companies`        | bearer           | For the form's dropdown                                       |
 
 ---
 

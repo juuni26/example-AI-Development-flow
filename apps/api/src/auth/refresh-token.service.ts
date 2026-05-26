@@ -1,11 +1,11 @@
 import crypto from "node:crypto";
 import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, isNull, sql } from "drizzle-orm";
+import { loadEnv } from "../config/env";
 import { DB_TOKEN, type Db } from "../db/db.module";
 import { refreshTokens, type RefreshTokenRow } from "../db/schema";
 
 const REFRESH_TOKEN_BYTES = 32; // 256 bits
-const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export interface IssuedRefresh {
   /** The opaque token returned to the client; only ever in memory and the client. */
@@ -42,6 +42,8 @@ type ClaimResult =
 
 @Injectable()
 export class RefreshTokenService {
+  private readonly ttlMs = loadEnv().REFRESH_TOKEN_TTL;
+
   constructor(@Inject(DB_TOKEN) private readonly db: Db) {}
 
   /**
@@ -51,7 +53,7 @@ export class RefreshTokenService {
   async issue(userId: string, replacedById?: string): Promise<IssuedRefresh> {
     const plaintext = crypto.randomBytes(REFRESH_TOKEN_BYTES).toString("base64url");
     const tokenHash = this.hash(plaintext);
-    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
+    const expiresAt = new Date(Date.now() + this.ttlMs);
 
     const [row] = await this.db
       .insert(refreshTokens)

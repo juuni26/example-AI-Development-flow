@@ -26,9 +26,7 @@ export interface TestApp {
  * fixture (users + companies + services), and boots a Nest application
  * against that database. Caller is responsible for invoking `cleanup`.
  */
-async function startContainerWithRetry(
-  attempts = 3,
-): Promise<StartedPostgreSqlContainer> {
+async function startContainerWithRetry(attempts = 3): Promise<StartedPostgreSqlContainer> {
   let lastError: unknown;
   for (let i = 1; i <= attempts; i++) {
     try {

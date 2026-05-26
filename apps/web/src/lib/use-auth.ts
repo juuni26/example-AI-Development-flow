@@ -1,10 +1,5 @@
 import { useSyncExternalStore } from "react";
-import {
-  AUTH_STORAGE_KEYS,
-  clearAuth,
-  writeAuth,
-  type AuthSnapshot,
-} from "./auth-store";
+import { AUTH_STORAGE_KEYS, clearAuth, writeAuth, type AuthSnapshot } from "./auth-store";
 
 const subscribers = new Set<() => void>();
 

@@ -1,4 +1,4 @@
-import { test, expect, loginAs, CREDENTIALS, API_URL } from "./fixtures";
+import { test, expect, loginAs, API_URL } from "./fixtures";
 
 test.describe("admin CRUD via the catalog UI", () => {
   test.beforeEach(async ({ page }) => {
@@ -55,7 +55,9 @@ test.describe("admin CRUD via the catalog UI", () => {
     await expect(page.getByRole("row").filter({ hasText: name })).toBeVisible();
 
     // --- EDIT -------------------------------------------------------------
-    await page.getByRole("button", { name: new RegExp(`actions for ${escapeRegExp(name)}`, "i") }).click();
+    await page
+      .getByRole("button", { name: new RegExp(`actions for ${escapeRegExp(name)}`, "i") })
+      .click();
     await page.getByRole("menuitem", { name: /edit/i }).click();
     const editSheet = page.getByRole("dialog");
     await expect(editSheet.getByText("Edit service", { exact: true })).toBeVisible();
@@ -75,7 +77,9 @@ test.describe("admin CRUD via the catalog UI", () => {
     await expect(updatedRow.getByText("Draft")).toBeVisible();
 
     // --- DELETE -----------------------------------------------------------
-    await page.getByRole("button", { name: new RegExp(`actions for ${escapeRegExp(name)}`, "i") }).click();
+    await page
+      .getByRole("button", { name: new RegExp(`actions for ${escapeRegExp(name)}`, "i") })
+      .click();
     await page.getByRole("menuitem", { name: /delete/i }).click();
 
     const confirm = page.getByRole("alertdialog");

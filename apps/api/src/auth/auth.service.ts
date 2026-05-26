@@ -1,11 +1,7 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import bcrypt from "bcryptjs";
-import type {
-  AccessTokenPayload,
-  LoginResponse,
-  RefreshResponse,
-} from "@cleandrop/shared";
+import type { AccessTokenPayload, LoginResponse, RefreshResponse } from "@cleandrop/shared";
 import { UsersService } from "../users/users.service";
 import { RefreshTokenService } from "./refresh-token.service";
 
