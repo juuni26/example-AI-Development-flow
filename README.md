@@ -1,10 +1,53 @@
-# Cleandrop — Services Catalog
+# This is an example of how / my approach to develop App solution with AI as a tool
 
-A small but production-grade fullstack take-home. **Cleandrop** is a services-catalog application where an `admin` manages cleaning-service listings and a read-only `user` browses them. The visible feature set is intentionally narrow; the depth is in _how_ it's built — schema design, role enforcement at every layer, a single Zod schema driving validation + types + OpenAPI + form, refresh tokens with reuse detection, server-side filter/sort/pagination, and 63 automated tests against real Postgres + a real browser.
+## The problem
 
-The original challenge brief is in [`docs/CHALLENGE.md`](./docs/CHALLENGE.md). A run-and-test cheat sheet, full glossary, and ADRs live in [`task-goal.md`](./task-goal.md), [`CONTEXT.md`](./CONTEXT.md), and [`docs/adr/`](./docs/adr/) — this README is the narrative.
+Build a small **Services catalog** with authentication and **role-based access**, matching a reference screen. The entire brief arrived as **two files** — there was no detailed spec to implement against:
 
-![Services page reference](./challenge-preview.png)
+| The original challenge         | File                                                   |
+| ------------------------------ | ------------------------------------------------------ |
+| The written requirements       | **[`task-goal.md`](./task-goal.md)**                   |
+| The target UI (one screenshot) | **[`challenge-preview.png`](./challenge-preview.png)** |
+
+![Services page reference — the target UI](./challenge-preview.png)
+
+### The required flow
+
+1. **Log in** on `/login` with email + password → receive a **JWT carrying a `role` claim** → **redirect to `/services`**.
+2. On `/services`, render the catalog above: a **sidebar** (Services active), a **header** (title + subtitle + "Platform-wide" badge), **four summary cards** (Total / Active / Drafts / Avg. Base Price), and a **Catalog** section with **search, status + category filters, a sortable table, and pagination**.
+3. The table shows, in order: **Name (with description) · Category · Company · Status · Duration**, seeded with **9 services** across mixed statuses.
+4. **Role-based access**, enforced on **both layers**:
+
+| Role    | Can do                               | Sees                                     |
+| ------- | ------------------------------------ | ---------------------------------------- |
+| `admin` | Full **CRUD** — create, edit, delete | `+ Add` button, per-row Edit/Delete menu |
+| `user`  | **Read-only** — list + view          | No write affordances at all              |
+
+The catch the brief calls out explicitly: hiding buttons in the UI is **not** enough — the **API must also reject** a `user` who calls a write endpoint directly (`403`), even if they bypass the UI.
+
+5. The stack is **fixed**: **Bun · NestJS · Drizzle ORM · PostgreSQL · shadcn/ui · Jest · Docker** — `docker compose up` must bring up API + DB + frontend.
+
+That's the whole brief. **The interesting part is not _what_ to build — it's _how_ two files (a paragraph of requirements + one screenshot) become a tested, deployable system without a spec handed to you.** The rest of this README is the story of that process; the repo's commit history, issues, and PRs are the receipts.
+
+> **This repo is meant to be read, not just run.** Every claim below links to the artifact that proves it — an issue, a PR, a commit, or an ADR. Browse [the issues](https://github.com/juuni26/cleandrop/issues?q=is%3Aissue) and [the PRs](https://github.com/juuni26/cleandrop/pulls?q=is%3Apr) alongside it.
+
+---
+
+## How this repo was built — context → PRD → issues → TDD → e2e → refactor → deploy
+
+The whole thing was built as a deliberate pipeline. Each stage left a durable artifact you can inspect:
+
+| Stage                               | What happened                                                                                                                                                                                                                                                                                                                                    | Where to verify                                                                                                                                                                                              |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **1 · Gather context**              | Read the brief + preview, then ran a structured Q&A over every load-bearing decision (domain language, money model, auth scheme, validation strategy, repo layout, test scope, error shape). Output: a domain glossary, stack-decision table, and 3 ADRs — _before any code_.                                                                    | commit [`db8ecfa`](https://github.com/juuni26/cleandrop/commit/db8ecfa) · [`CONTEXT.md`](./CONTEXT.md) · [`docs/adr/`](./docs/adr/)                                                                          |
+| **2 · Turn it into a PRD**          | The brief in [`task-goal.md`](./task-goal.md) became a concrete, outcome-based plan: domain entities, the API contract, the role matrix, the UI inventory, and an explicit "out of scope" list. The "nice-to-haves" (refresh tokens, e2e, OpenAPI) were promoted to **required** scope.                                                          | [`CONTEXT.md`](./CONTEXT.md)                                                                                                                                                                                 |
+| **3 · Slice into issues**           | The PRD was decomposed into **9 vertical-slice issues** ([#1–#7](https://github.com/juuni26/cleandrop/issues?q=is%3Aissue), #15, #17), each cutting end-to-end through schema → API → shared types → UI → tests. The dependency chain is strict (#2 blocks #3 …) so `main` is demoable at every commit — never a half-finished horizontal layer. | [issues list](https://github.com/juuni26/cleandrop/issues?q=is%3Aissue+is%3Aclosed)                                                                                                                          |
+| **4 · Build each slice test-first** | Every slice shipped as one PR that `closes #N` with its tests in the same diff. A failing test defined "done", then the code made it pass.                                                                                                                                                                                                       | PRs [#8](https://github.com/juuni26/cleandrop/pull/8)–[#14](https://github.com/juuni26/cleandrop/pull/14) (`feat(...) … closes #N`)                                                                          |
+| **5 · Prove it end-to-end**         | Two e2e layers: backend against a **real Postgres** (Testcontainers, no mocks) and the browser against the **live Docker stack** (Playwright on the nginx-served production bundle). The Playwright pass caught a render bug the API tests structurally could not see.                                                                           | PR [#14](https://github.com/juuni26/cleandrop/pull/14) (backend) · PR [#16](https://github.com/juuni26/cleandrop/pull/16) (browser)                                                                          |
+| **6 · Refactor & harden**           | With tests green, a hardening pass fixed a refresh-rotation race + review findings; a later pass concentrated the rotation invariant behind one seam and added ESLint/Prettier. The tests are what made these safe.                                                                                                                              | commits [`7b58d51`](https://github.com/juuni26/cleandrop/commit/7b58d51), [`ad9e13b`](https://github.com/juuni26/cleandrop/commit/ad9e13b), [`1a8b672`](https://github.com/juuni26/cleandrop/commit/1a8b672) |
+| **7 · Deploy**                      | One command — `docker compose up -d` — brings up the whole stack with an ordered lifecycle (`db → migrate → seed → api → web`). Re-running is idempotent.                                                                                                                                                                                        | [`docker-compose.yml`](./docker-compose.yml) · [Dockerfiles](./apps)                                                                                                                                         |
+
+The result: **65 automated checks** (46 backend e2e + 19 Playwright) against real Postgres and a real browser, every feature traceable from an issue to a PR to a test.
 
 ---
 
@@ -21,16 +64,16 @@ Seeded credentials are surfaced on the login page itself with click-to-copy butt
 
 ---
 
-## How I approached it
+## Reading the history
 
-The build is structured as **seven vertical slices** (issues #1–#7 in the tracker) plus two follow-ons (#15 Playwright e2e, #17 UI polish). Each slice cuts end-to-end through schema, API, shared types, web UI, and tests — never a horizontal layer in isolation. The dependency chain is strict (#2 blocks #3, etc.), which means at any commit on `main` the app is _demoable_, not a half-finished layer cake.
+The narrative above is verifiable by walking the repo:
 
-Before any slice started, I sat down with the brief and the preview screenshot and worked through every load-bearing decision in a structured Q&A — domain language, money representation, auth scheme, validation strategy, repo layout, test scope, error shape, sort/pagination contract. The outputs are:
+- **[Issues](https://github.com/juuni26/cleandrop/issues?q=is%3Aissue)** — each is a vertical slice with a scope and acceptance criteria. Read them top-to-bottom to see the plan.
+- **[Pull requests](https://github.com/juuni26/cleandrop/pulls?q=is%3Apr)** — each `closes #N` and carries a test plan, a walkthrough, and (where relevant) a bug log. The PR-to-issue mapping is 1:1.
+- **Commit log** — `git log --oneline` reads as the pipeline: `docs: planning context` → `feat(scaffold) … closes #1` → `feat(auth) … closes #2` → … → `refactor(auth)` → `chore(tooling)`.
+- **[`docs/adr/`](./docs/adr/)** — the three decisions that are _hard to reverse_ (money model, refresh tokens, Zod as the single source of truth), each with the alternatives weighed.
 
-- **[`CONTEXT.md`](./CONTEXT.md)** — domain glossary (Service / Company / Status / Role / Base Price / Duration) and the stack decisions in compact form.
-- **[`docs/adr/`](./docs/adr/)** — three architecture decision records for the choices that are _hard to reverse_ (money model, refresh tokens, Zod as single source of truth).
-
-Then each slice was implemented, tested, and merged via PR. Test counts are committed-in: 45 backend e2e + 18 Playwright = **63 automated checks** at the time of writing.
+So the rest of this README explains the **why** behind the load-bearing choices; the issues and PRs show the **how** and **when**.
 
 ---
 
@@ -126,7 +169,7 @@ Backend e2e proves the API does what the spec says. It cannot prove:
 - The single-flight refresh works in a real browser
 - The session-expiry redirect lands on `/login?next=…`
 
-So #15 added 18 Playwright tests against the **live `docker compose up` stack** — exercising the real production build (nginx + bundled `VITE_API_URL`), not `vite dev`. One of those tests literally caught a `useSyncExternalStore` snapshot-stability bug that was rendering the catalog page as a blank `<div id="root">`. Backend tests had no way to see it.
+So #15 added a Playwright suite (now 19 tests) against the **live `docker compose up` stack** — exercising the real production build (nginx + bundled `VITE_API_URL`), not `vite dev`. One of those tests literally caught a `useSyncExternalStore` snapshot-stability bug that was rendering the catalog page as a blank `<div id="root">`. Backend tests had no way to see it.
 
 ### Why URL-bound query state
 
@@ -291,11 +334,11 @@ cleandrop/
 ├── packages/
 │   └── shared/             # type-only: Zod schemas + types + helpers (formatMoney, formatDuration)
 ├── docs/
-│   ├── CHALLENGE.md        # original brief
+│   ├── CHALLENGE.md        # archived copy of the challenge brief (same as task-goal.md)
 │   └── adr/                # 3 architecture decision records
 ├── docker-compose.yml      # db → migrate → seed → api → web
 ├── CONTEXT.md              # domain glossary + stack decisions (compact reference)
-├── task-goal.md            # run-and-test cheat sheet
+├── task-goal.md            # the original challenge brief (verbatim)
 └── package.json            # Bun workspaces
 ```
 
@@ -327,18 +370,18 @@ If you change `API_HOST_PORT`, also change `VITE_API_URL` and rebuild web (`dock
 
 ### Test scoreboard
 
-| Suite                             | Count  | Wall-clock | What it proves                                                           |
-| --------------------------------- | ------ | ---------- | ------------------------------------------------------------------------ |
-| `auth.e2e-spec.ts`                | 7      | ~5s        | Login happy/sad paths, `/me` guard                                       |
-| `refresh.e2e-spec.ts`             | 6      | ~6s        | Rotation chain, reuse-detection cascade, logout idempotency              |
-| `services.e2e-spec.ts`            | 15     | ~4s        | Filters, ILIKE search, sort + `id ASC` tiebreaker, pagination boundaries |
-| `summary.e2e-spec.ts`             | 3      | ~3s        | Counts + avg match fixture                                               |
-| `services-crud.e2e-spec.ts`       | 14     | ~5s        | Role-gated mutations, validation errors, FK 404s                         |
-| `auth.spec.ts` (Playwright)       | 6      | ~3s        | Browser login flow, redirects, sidebar identity                          |
-| `catalog.spec.ts` (Playwright)    | 7      | ~5s        | Filter/sort/pagination + role-hidden affordances                         |
-| `admin-crud.spec.ts` (Playwright) | 3      | ~5s        | Sheet create → edit → delete; UI-bypass 403                              |
-| `polish.spec.ts` (Playwright)     | 2      | ~2s        | Sidebar collapse persistence, demo-creds copy + "Use"                    |
-| **Total**                         | **63** | **~35s**   |                                                                          |
+| Suite                             | Count  | Wall-clock | What it proves                                                                        |
+| --------------------------------- | ------ | ---------- | ------------------------------------------------------------------------------------- |
+| `auth.e2e-spec.ts`                | 7      | ~5s        | Login happy/sad paths, `/me` guard                                                    |
+| `refresh.e2e-spec.ts`             | 7      | ~6s        | Rotation chain, reuse-detection cascade, concurrent-rotation race, logout idempotency |
+| `services.e2e-spec.ts`            | 15     | ~4s        | Filters, ILIKE search, sort + `id ASC` tiebreaker, pagination boundaries              |
+| `summary.e2e-spec.ts`             | 3      | ~3s        | Counts + avg match fixture                                                            |
+| `services-crud.e2e-spec.ts`       | 14     | ~5s        | Role-gated mutations, validation errors, FK 404s                                      |
+| `auth.spec.ts` (Playwright)       | 6      | ~3s        | Browser login flow, redirects, sidebar identity                                       |
+| `catalog.spec.ts` (Playwright)    | 8      | ~5s        | Filter/sort/pagination, role-hidden affordances, clear-filters regression             |
+| `admin-crud.spec.ts` (Playwright) | 3      | ~5s        | Sheet create → edit → delete; UI-bypass 403                                           |
+| `polish.spec.ts` (Playwright)     | 2      | ~2s        | Sidebar collapse persistence, demo-creds copy + "Use"                                 |
+| **Total**                         | **65** | **~35s**   |                                                                                       |
 
 ---
 
@@ -376,10 +419,10 @@ Hit Swagger UI at http://localhost:3000/api/docs (no auth needed to read; click 
 
 ## Useful pointers
 
-- **[`task-goal.md`](./task-goal.md)** — quick run-and-test cheat sheet (originally the README before this rewrite).
-- **[`CONTEXT.md`](./CONTEXT.md)** — domain glossary + compact stack-decisions table.
+- **[`task-goal.md`](./task-goal.md)** — the original challenge brief, verbatim (one of the two files the whole project started from).
+- **[`CONTEXT.md`](./CONTEXT.md)** — domain glossary + compact stack-decisions table (the PRD distilled from the brief).
 - **[`docs/adr/0001`](./docs/adr/0001-money-as-integer-cents-single-currency.md)** — why integer cents, single EUR.
 - **[`docs/adr/0002`](./docs/adr/0002-refresh-token-rotation-with-reuse-detection.md)** — why rotation + reuse detection over httpOnly cookies.
 - **[`docs/adr/0003`](./docs/adr/0003-zod-as-cross-stack-single-source-of-truth.md)** — why Zod everywhere.
-- **[`docs/CHALLENGE.md`](./docs/CHALLENGE.md)** — the original brief.
+- **[`docs/CHALLENGE.md`](./docs/CHALLENGE.md)** — an archived copy of the same brief, kept under `docs/`.
 - **PR history** at https://github.com/juuni26/cleandrop/pulls — every slice has a PR with a test plan, walkthrough, and the bug log (when relevant).
